@@ -1,6 +1,8 @@
 FROM p4lang/behavioral-model:latest
 MAINTAINER Seth Fowler <seth.fowler@barefootnetworks.com>
 
+ARG UNIFIED_MAX_CHUNK_SIZE=10
+
 ENV P4C_DEPS automake \
              bison \
              build-essential \

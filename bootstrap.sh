@@ -23,7 +23,7 @@ set -e  # exit on error
 # This needs to be done before automake runs. See the source code of the tool
 # for more discussion.
 echo "Generating unified-compilation.am"
-tools/gen-unified-makefile.py --max-chunk-size 10 \
+tools/gen-unified-makefile.py --max-chunk-size "${UNIFIED_MAX_CHUNK_SIZE:-10}" \
                               --regenerate-with regenerate-unified-compilation.am \
                               -o unified-compilation.am
 

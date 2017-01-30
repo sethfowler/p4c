@@ -4,7 +4,7 @@ services:
   - docker
 
 install:
-  - docker build -t p4c .
+  - docker build --build-arg UNIFIED_MAX_CHUNK_SIZE=1000 -t p4c .
 
 script:
   - docker run -w /p4c/build p4c make check VERBOSE=1

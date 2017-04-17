@@ -911,7 +911,12 @@ name: IDENTIFIER
 
 %%
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wunused-variable"
 #include "p4-14-lex.c"
+#pragma GCC diagnostic pop
 }  // end anonymous namespace
 
 static bool parsing = false;

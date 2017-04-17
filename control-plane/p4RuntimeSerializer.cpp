@@ -747,6 +747,7 @@ private:
             case P4RuntimeSymbolType::METER: return PI_METER_ID;
             case P4RuntimeSymbolType::TABLE: return PI_TABLE_ID;
         }
+        BUG("Invalid resource type");
     }
 
 

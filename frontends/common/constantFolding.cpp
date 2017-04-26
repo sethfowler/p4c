@@ -60,13 +60,18 @@ const IR::Node* DoConstantFolding::postorder(IR::PathExpression* e) {
     auto decl = refMap->getDeclaration(e->path);
     if (decl == nullptr)
         return e;
-    auto v = get(constants, decl->getNode());
-    if (v == nullptr)
-        return e;
-    setConstant(e, v);
-    if (v->is<IR::ListExpression>())
-        return e;
-    return v;
+    if (decl->is<IR::Declaration_Constant>()) {
+        auto c = decl->to<IR::Declaration_Constant>();
+        auto v = getConstant(c->initializer);
+        if (v == nullptr)
+            return e;
+        if (v->is<IR::ListExpression>())
+            return e;
+        LOG2("Folded " << e << " to " << v);
+        return v;
+    }
+    LOG2("Skipping " << e);
+    return e;
 }
 
 const IR::Node* DoConstantFolding::postorder(IR::Declaration_Constant* d) {
@@ -457,6 +462,7 @@ const IR::Node* DoConstantFolding::postorder(IR::Slice* e) {
 }
 
 const IR::Node* DoConstantFolding::postorder(IR::Member* e) {
+    LOG2("e->type " << e->type);
     if (!typesKnown)
         return e;
     auto orig = getOriginal<IR::Member>();

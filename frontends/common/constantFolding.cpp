@@ -23,54 +23,48 @@ namespace P4 {
 
 const IR::Expression* DoConstantFolding::getConstant(const IR::Expression* expr) const {
     CHECK_NULL(expr);
-    auto cst = get(constants, expr);
-    if (cst != nullptr)
-        return cst;
-    if (expr->is<IR::Constant>())
+    if (expr->is<IR::Constant>()) {
         return expr;
-    if (expr->is<IR::BoolLiteral>())
+    }
+    if (expr->is<IR::BoolLiteral>()) {
         return expr;
+    }
     if (expr->is<IR::ListExpression>()) {
         auto list = expr->to<IR::ListExpression>();
         for (auto e : list->components)
-            if (getConstant(e) == nullptr)
+            if (getConstant(e) == nullptr) {
                 return nullptr;
-        return list;
+            }
+        return expr;
     }
     if (typesKnown) {
         auto ei = EnumInstance::resolve(expr, typeMap);
-        if (ei != nullptr)
+        if (ei != nullptr) { 
             return expr;
+        }
     }
-
     return nullptr;
 }
-
-// This has to be called from a visitor method - it calls getOriginal()
-void DoConstantFolding::setConstant(const IR::Node* node, const IR::Expression* result) {
-    LOG2("Folding " << node << " to " << result << " (" << result->id << ")");
-    auto orig = getOriginal();
-    constants.emplace(node, result);
-    constants.emplace(orig, result);
-}
-
+    
 const IR::Node* DoConstantFolding::postorder(IR::PathExpression* e) {
-    if (refMap == nullptr)
+    if (refMap == nullptr) {
         return e;
-    auto decl = refMap->getDeclaration(e->path);
-    if (decl == nullptr)
-        return e;
-    if (decl->is<IR::Declaration_Constant>()) {
-        auto c = decl->to<IR::Declaration_Constant>();
-        auto v = getConstant(c->initializer);
-        if (v == nullptr)
-            return e;
-        if (v->is<IR::ListExpression>())
-            return e;
-        LOG2("Folded " << e << " to " << v);
-        return v;
     }
-    LOG2("Skipping " << e);
+    auto decl = refMap->getDeclaration(e->path);
+    if (decl == nullptr) {
+        return e;
+    }
+    if (decl->is<IR::Declaration_Constant>()) {
+        auto dc = decl->to<IR::Declaration_Constant>();
+        auto cst = get(constants, dc);
+        if (cst == nullptr)
+            cst = getConstant(dc->initializer);
+        if (cst == nullptr)
+            return e;
+        if (!typesKnown && cst->is<IR::ListExpression>())
+            return e;
+        return cst;
+    }
     return e;
 }
 
@@ -81,27 +75,26 @@ const IR::Node* DoConstantFolding::postorder(IR::Declaration_Constant* d) {
             ::error("%1%: Cannot evaluate initializer for constant", d->initializer);
         return d;
     }
-
-    if (typesKnown) {
-        // If we typechecked we're safe
-        setConstant(d, init);
-    } else {
-        // In fact, this declaration may imply a cast, so the actual value of
-        // d is not init, but (d->type)init.  The typechecker inserts casts,
-        // but if we run this before typechecking we have to be more conservative.
+    if (!typesKnown) {
+        // This declaration may imply a cast, so the actual value of d
+        // is not init, but (d->type)init. The typechecker inserts
+        // casts, but if we run this before typechecking we have to be
+        // more conservative.
         if (init->is<IR::Constant>()) {
             auto cst = init->to<IR::Constant>();
             if (d->type->is<IR::Type_Bits>()) {
                 if (cst->type->is<IR::Type_InfInt>() ||
                     (cst->type->is<IR::Type_Bits>() &&
-                     !(*d->type->to<IR::Type_Bits>() == *cst->type->to<IR::Type_Bits>())))
+                     !(*d->type->to<IR::Type_Bits>() == *cst->type->to<IR::Type_Bits>()))) 
                     init = new IR::Constant(init->srcInfo, d->type, cst->value, cst->base);
-                setConstant(d, init);
             }
         }
+        if (init != d->initializer) 
+            d = new IR::Declaration_Constant(d->srcInfo, d->name, d->annotations, d->type, init);
     }
-    if (init != d->initializer)
-        d = new IR::Declaration_Constant(d->srcInfo, d->name, d->annotations, d->type, init);
+    auto orig = getOriginal()->to<IR::Declaration_Constant>();
+    BUG_CHECK(orig, "getOriginal() did not return a Declaration_Constant");  
+    constants.emplace(orig, init);
     return d;
 }
 
@@ -129,9 +122,7 @@ const IR::Node* DoConstantFolding::postorder(IR::Cmpl* e) {
     }
 
     mpz_class value = ~cst->value;
-    auto result = new IR::Constant(cst->srcInfo, t, value, cst->base, true);
-    setConstant(e, result);
-    return result;
+    return new IR::Constant(cst->srcInfo, t, value, cst->base, true);
 }
 
 const IR::Node* DoConstantFolding::postorder(IR::Neg* e) {
@@ -156,9 +147,7 @@ const IR::Node* DoConstantFolding::postorder(IR::Neg* e) {
     }
 
     mpz_class value = -cst->value;
-    auto result = new IR::Constant(cst->srcInfo, t, value, cst->base, true);
-    setConstant(e, result);
-    return result;
+    return new IR::Constant(cst->srcInfo, t, value, cst->base, true);
 }
 
 const IR::Constant*
@@ -265,9 +254,7 @@ DoConstantFolding::compare(const IR::Operation_Binary* e) {
             return e;
         }
         bool bresult = (left->value == right->value) == eqTest;
-        auto result = new IR::BoolLiteral(e->srcInfo, bresult);
-        setConstant(e, result);
-        return result;
+        return new IR::BoolLiteral(e->srcInfo, bresult);
     } else if (typesKnown) {
         auto le = EnumInstance::resolve(eleft, typeMap);
         auto re = EnumInstance::resolve(eright, typeMap);
@@ -275,9 +262,7 @@ DoConstantFolding::compare(const IR::Operation_Binary* e) {
             BUG_CHECK(le->type == re->type,
                       "%1%: different enum types in comparison", e);
             bool bresult = (le->name == re->name) == eqTest;
-            auto result = new IR::BoolLiteral(e->srcInfo, bresult);
-            setConstant(e, result);
-            return result;
+            return new IR::BoolLiteral(e->srcInfo, bresult);
         }
     }
 
@@ -354,13 +339,10 @@ DoConstantFolding::binary(const IR::Operation_Binary* e,
         }
     }
 
-    const IR::Expression* result;
     if (e->is<IR::Operation_Relation>())
-        result = new IR::BoolLiteral(e->srcInfo, value != 0);
+        return new IR::BoolLiteral(e->srcInfo, value != 0);
     else
-        result = new IR::Constant(e->srcInfo, resultType, value, left->base, true);
-    setConstant(e, result);
-    return result;
+        return new IR::Constant(e->srcInfo, resultType, value, left->base, true);
 }
 
 const IR::Node* DoConstantFolding::postorder(IR::LAnd* e) {
@@ -373,16 +355,10 @@ const IR::Node* DoConstantFolding::postorder(IR::LAnd* e) {
         ::error("%1%: Expected a boolean value", left);
         return e;
     }
-
     if (lcst->value) {
-        setConstant(e, e->right);
         return e->right;
     }
-
-    // Short-circuit folding
-    auto result = new IR::BoolLiteral(left->srcInfo, false);
-    setConstant(e, result);
-    return result;
+    return new IR::BoolLiteral(left->srcInfo, false);
 }
 
 const IR::Node* DoConstantFolding::postorder(IR::LOr* e) {
@@ -395,16 +371,10 @@ const IR::Node* DoConstantFolding::postorder(IR::LOr* e) {
         ::error("%1%: Expected a boolean value", left);
         return e;
     }
-
     if (!lcst->value) {
-        setConstant(e, e->right);
         return e->right;
     }
-
-    // Short-circuit folding
-    auto result = new IR::BoolLiteral(left->srcInfo, true);
-    setConstant(e, result);
-    return result;
+    return new IR::BoolLiteral(left->srcInfo, true);
 }
 
 const IR::Node* DoConstantFolding::postorder(IR::Slice* e) {
@@ -456,13 +426,10 @@ const IR::Node* DoConstantFolding::postorder(IR::Slice* e) {
     auto resultType = typeMap->getType(getOriginal(), true);
     if (!resultType->is<IR::Type_Bits>())
         BUG("Type of slice is not Type_Bits, but %1%", resultType);
-    auto result = new IR::Constant(e->srcInfo, resultType, value, cbase->base, true);
-    setConstant(e, result);
-    return result;
+    return new IR::Constant(e->srcInfo, resultType, value, cbase->base, true);
 }
 
 const IR::Node* DoConstantFolding::postorder(IR::Member* e) {
-    LOG2("e->type " << e->type);
     if (!typesKnown)
         return e;
     auto orig = getOriginal<IR::Member>();
@@ -502,7 +469,6 @@ const IR::Node* DoConstantFolding::postorder(IR::Member* e) {
     }
     typeMap->setType(result, origtype);
     typeMap->setCompileTimeConstant(result);
-    setConstant(e, result);
     return result;
 }
 
@@ -532,9 +498,7 @@ const IR::Node* DoConstantFolding::postorder(IR::Concat* e) {
 
     auto resultType = IR::Type_Bits::get(lt->size + rt->size, lt->isSigned);
     mpz_class value = Util::shift_left(left->value, static_cast<unsigned>(rt->size)) + right->value;
-    auto result = new IR::Constant(e->srcInfo, resultType, value, left->base);
-    setConstant(e, result);
-    return result;
+    return new IR::Constant(e->srcInfo, resultType, value, left->base);
 }
 
 const IR::Node* DoConstantFolding::postorder(IR::LNot* e) {
@@ -547,10 +511,7 @@ const IR::Node* DoConstantFolding::postorder(IR::LNot* e) {
         ::error("%1%: Expected a boolean value", op);
         return e;
     }
-
-    auto result = new IR::BoolLiteral(cst->srcInfo, !cst->value);
-    setConstant(e, result);
-    return result;
+    return new IR::BoolLiteral(cst->srcInfo, !cst->value);
 }
 
 const IR::Node* DoConstantFolding::postorder(IR::Mux* e) {
@@ -583,7 +544,6 @@ const IR::Node* DoConstantFolding::shift(const IR::Operation_Binary* e) {
 
     if (sgn(cr->value) == 0) {
         // ::warning("%1% with zero", e);
-        setConstant(e, e->left);
         return e->left;
     }
 
@@ -610,9 +570,7 @@ const IR::Node* DoConstantFolding::shift(const IR::Operation_Binary* e) {
         value = Util::shift_left(value, shift);
     else
         value = Util::shift_right(value, shift);
-    auto result = new IR::Constant(e->srcInfo, left->type, value, cl->base);
-    setConstant(e, result);
-    return result;
+    return new IR::Constant(e->srcInfo, left->type, value, cl->base);
 }
 
 const IR::Node *DoConstantFolding::postorder(IR::Cast *e) {
@@ -630,15 +588,11 @@ const IR::Node *DoConstantFolding::postorder(IR::Cast *e) {
         auto type = etype->to<IR::Type_Bits>();
         if (expr->is<IR::Constant>()) {
             auto arg = expr->to<IR::Constant>();
-            auto result = cast(arg, arg->base, type);
-            setConstant(e, result);
-            return result;
+            return cast(arg, arg->base, type);
         } else if (expr -> is<IR::BoolLiteral>()) {
             auto arg = expr->to<IR::BoolLiteral>();
             int v = arg->value ? 1 : 0;
-            auto result = new IR::Constant(e->srcInfo, type, v, 10);
-            setConstant(e, result);
-            return result;
+            return new IR::Constant(e->srcInfo, type, v, 10);
         } else {
             return e;
         }
@@ -668,19 +622,15 @@ const IR::Node *DoConstantFolding::postorder(IR::Cast *e) {
                 ::error("%1%: Only 0 and 1 can be cast to booleans", e);
                 return e;
             }
-            auto lit = new IR::BoolLiteral(e->srcInfo, v == 1);
-            setConstant(e, lit);
-            return lit;
+            return new IR::BoolLiteral(e->srcInfo, v == 1);
         }
     } else if (etype->is<IR::Type_StructLike>()) {
         auto result = expr->clone();
         auto origtype = typeMap->getType(getOriginal());
         typeMap->setType(result, origtype);
         typeMap->setCompileTimeConstant(result);
-        setConstant(e, result);
         return result;
     }
-
     return e;
 }
 

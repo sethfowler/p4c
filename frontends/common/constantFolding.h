@@ -28,11 +28,11 @@ namespace P4 {
 class DoConstantFolding : public Transform {
  protected:
     const ReferenceMap* refMap;  // if null no 'const' values can be resolved
-    TypeMap* typeMap;  // if null we have no types; updated for new constants
+    const TypeMap* typeMap;  // if null we have no types; updated for new constants
     bool typesKnown;
     bool warnings;  // if true emit warnings
     // maps expressions and declarations to their constant values
-    std::map<const IR::Node*, const IR::Expression*> constants;
+    std::map<const IR::Declaration_Constant*, const IR::Expression*> constants;
 
  protected:
     // returns nullptr if the expression is not a constant

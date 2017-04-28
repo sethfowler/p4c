@@ -467,8 +467,6 @@ const IR::Node* DoConstantFolding::postorder(IR::Member* e) {
             BUG("Could not find field %1% in type %2%", e->member, type);
         result = list->components.at(index)->clone();
     }
-    typeMap->setType(result, origtype);
-    typeMap->setCompileTimeConstant(result);
     return result;
 }
 
@@ -625,11 +623,7 @@ const IR::Node *DoConstantFolding::postorder(IR::Cast *e) {
             return new IR::BoolLiteral(e->srcInfo, v == 1);
         }
     } else if (etype->is<IR::Type_StructLike>()) {
-        auto result = expr->clone();
-        auto origtype = typeMap->getType(getOriginal());
-        typeMap->setType(result, origtype);
-        typeMap->setCompileTimeConstant(result);
-        return result;
+        return expr->clone();
     }
     return e;
 }

@@ -33,9 +33,12 @@ namespace P4 {
  * @pre: `typeMap` is up-to-date if not `nullptr` and similarly for `refMap`
  *
  * @post: Ensures 
- *    - most constant expressions folded into the IR (TODO: specify?)
+ *
+ *    - most expressions that can be statically shown to evaluate to a
+ *      constant are replaced with the constant value.
  * 
- *    - at least one operand in each expression has a known width.
+ *    - operations that involve constant InfInt operands are evaluated to
+ *      an InfInt value
  * 
  *    - if `typeMap` and `refMap` are not `nullptr` then
  *      `IR::Declaration_Constant` nodes are initialized with
@@ -64,7 +67,7 @@ class DoConstantFolding : public Transform {
     /// @returns a constant equivalent to @p expr or `nullptr`
     const IR::Expression* getConstant(const IR::Expression* expr) const;
 
-    /// Statically cast constant @p node to @p type at @p base.
+    /// Statically cast constant @p node to @p type represented in the specified @p base.
     const IR::Constant* cast(
         const IR::Constant* node, unsigned base, const IR::Type_Bits* type) const;
 

@@ -23,15 +23,14 @@ limitations under the License.
 #include "frontends/p4/typeChecking/typeChecker.h"
 
 namespace P4 {
-// Can also be run before type checking, so it only uses types if
-// they are available.
+// This pass can be run before type checking; it uses types if available.
 class DoConstantFolding : public Transform {
  protected:
     const ReferenceMap* refMap;  // if null no 'const' values can be resolved
-    const TypeMap* typeMap;  // if null we have no types; updated for new constants
+    const TypeMap* typeMap;      // if null we have no types; updated for new constants
     bool typesKnown;
     bool warnings;  // if true emit warnings
-    // maps expressions and declarations to their constant values
+    // maps declaration constants to constant values
     std::map<const IR::Declaration_Constant*, const IR::Expression*> constants;
 
  protected:

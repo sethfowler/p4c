@@ -23,37 +23,31 @@ namespace P4 {
 
 const IR::Expression* DoConstantFolding::getConstant(const IR::Expression* expr) const {
     CHECK_NULL(expr);
-    if (expr->is<IR::Constant>()) {
+    if (expr->is<IR::Constant>())
         return expr;
-    }
-    if (expr->is<IR::BoolLiteral>()) {
+    if (expr->is<IR::BoolLiteral>())
         return expr;
-    }
     if (expr->is<IR::ListExpression>()) {
         auto list = expr->to<IR::ListExpression>();
         for (auto e : list->components)
-            if (getConstant(e) == nullptr) {
+            if (getConstant(e) == nullptr)
                 return nullptr;
-            }
         return expr;
     }
     if (typesKnown) {
         auto ei = EnumInstance::resolve(expr, typeMap);
-        if (ei != nullptr) {
+        if (ei != nullptr)
             return expr;
-        }
     }
     return nullptr;
 }
 
 const IR::Node* DoConstantFolding::postorder(IR::PathExpression* e) {
-    if (refMap == nullptr) {
+    if (refMap == nullptr)
         return e;
-    }
     auto decl = refMap->getDeclaration(e->path);
-    if (decl == nullptr) {
+    if (decl == nullptr)
         return e;
-    }
     if (decl->is<IR::Declaration_Constant>()) {
         auto dc = decl->to<IR::Declaration_Constant>();
         auto cst = get(constants, dc);

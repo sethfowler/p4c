@@ -39,7 +39,8 @@ set (IRGENERATOR_GEN_SRCS
 include_directories (${CMAKE_CURRENT_BINARY_DIR})
 set_source_files_properties(${IRGENERATOR_GEN_SRCS} PROPERTIES GENERATED TRUE)
 set_source_files_properties(${IRGENERATOR_GEN_SRCS} PROPERTIES OBJECT_DEPENDS ${FLEX_IRgenLexer_OUTPUTS})
+enable_unity_build(irgenerator IRGENERATOR_SRCS)
 add_executable (irgenerator ${IRGENERATOR_SRCS} ${IRGENERATOR_GEN_SRCS})
-target_link_libraries (irgenerator p4ctoolkit gc gmp)
+target_link_libraries (irgenerator gc gmp p4ctoolkit)
 
 set (IRGEN_CPPLINT_FILES ${IRGENERATOR_SRCS} ${IRGENERATOR_HDRS} PARENT_SCOPE)

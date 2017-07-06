@@ -48,6 +48,7 @@ set(EBPF_CPPLINT_FILES ${P4C_EBPF_SRCS} ${P4C_EBPF_HDRS} PARENT_SCOPE)
 
 set (P4C_EBPF_DIST_HEADERS p4include/ebpf_model.p4)
 
+enable_unity_build(p4c-ebpf P4C_EBPF_SRCS)
 add_executable(p4c-ebpf ${P4C_EBPF_SRCS})
 target_link_libraries (p4c-ebpf ${P4C_LIBRARIES} ${P4C_LIB_DEPS})
 add_dependencies(p4c-ebpf genIR)

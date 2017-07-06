@@ -181,15 +181,20 @@ set (FRONTEND_SOURCES
   ${PARSERS_SRCS}
   ${P4_FRONTEND_SRCS}
   ${V1_FRONTEND_SRCS}
+  ${EXTENSION_FRONTEND_SOURCES}
+  )
+set (FRONTEND_GENERATED_SOURCES
+  ${IR_GENERATED_SRCS}
   ${p4PARSER_GEN_SRCS}
   ${v1PARSER_GEN_SRCS}
-  ${IR_GENERATED_SRCS}
   )
+
 
 set_source_files_properties(${IR_GENERATED_SRCS} PROPERTIES GENERATED TRUE)
 set_source_files_properties(${v1PARSER_GEN_SRCS} PROPERTIES GENERATED TRUE)
 set_source_files_properties(${p4PARSER_GEN_SRCS} PROPERTIES GENERATED TRUE)
-add_library (frontend STATIC ${FRONTEND_SOURCES} ${EXTENSION_FRONTEND_SOURCES})
+enable_unity_build(frontend FRONTEND_SOURCES)
+add_library (frontend STATIC ${FRONTEND_SOURCES} ${FRONTEND_GENERATED_SOURCES})
 add_dependencies (frontend genIR)
 add_dependencies (frontend mkp4dirs mkv1dirs)
 

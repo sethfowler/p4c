@@ -68,4 +68,6 @@ set (LIBP4CTOOLKIT_HDRS
 )
 
 set (LIB_CPPLINT_FILES ${LIBP4CTOOLKIT_SRCS} ${LIBP4CTOOLKIT_HDRS} PARENT_SCOPE)
+enable_unity_build(p4ctoolkit LIBP4CTOOLKIT_SRCS)
 add_library(p4ctoolkit STATIC ${LIBP4CTOOLKIT_SRCS})
+target_link_libraries (p4ctoolkit gc gmp gmpxx)

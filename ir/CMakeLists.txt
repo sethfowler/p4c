@@ -63,5 +63,6 @@ set (BASE_IR_DEF_FILES
 set (IR_DEF_FILES ${IR_DEF_FILES} ${BASE_IR_DEF_FILES} PARENT_SCOPE)
 set (IR_CPPLINT_FILES ${IR_SRCS} ${IR_HDRS} PARENT_SCOPE)
 
+enable_unity_build(ir IR_SRCS)
 add_library (ir STATIC ${IR_SRCS})
 add_dependencies(ir genIR)

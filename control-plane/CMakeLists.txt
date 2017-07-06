@@ -59,6 +59,7 @@ add_custom_command(OUTPUT ${P4RUNTIME_GEN_SRCS} ${P4RUNTIME_GEN_HDRS}
 set (CONTROLPLANE_SRCS
   p4RuntimeSerializer.cpp
   )
+enable_unity_build(controlplane CONTROLPLANE_SRCS)
 set (CONTROLPLANE_SOURCES
   ${P4RUNTIME_GEN_SRCS}
   ${CONTROLPLANE_SRCS}
@@ -71,7 +72,7 @@ set (CONTROLPLANE_HDRS
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/PI/include ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 set_source_files_properties (${CONTROLPLANE_SOURCES} PROPERTIES COMPILE_FLAGS "-Wno-unused-parameter")
 set_source_files_properties (${P4RUNTIME_GEN_SRCS} PROPERTIES GENERATED TRUE)
-add_library (controlplane STATIC ${CONTROLPLANE_SOURCES} )
+add_library (controlplane STATIC ${CONTROLPLANE_SOURCES})
 target_link_libraries (controlplane ${PROTOBUF_LIBRARY})
 add_dependencies (controlplane mkP4configdir genIR)
 

@@ -67,6 +67,7 @@ set (BMV2_BACKEND_HDRS
 
 set (IR_DEF_FILES ${IR_DEF_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/bmv2.def PARENT_SCOPE)
 
+enable_unity_build(bmv2backend BMV2_BACKEND_SRCS)
 add_library(bmv2backend ${BMV2_BACKEND_SRCS})
 add_dependencies(bmv2backend genIR)
 

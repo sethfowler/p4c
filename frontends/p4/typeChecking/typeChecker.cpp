@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include <sys/kdebug_signpost.h>
 #include "typeChecker.h"
 #include "typeUnification.h"
 #include "frontends/p4/substitution.h"
@@ -91,8 +92,17 @@ const IR::Type* TypeInference::cloneWithFreshTypeVariables(const IR::IMayBeGener
         BUG_CHECK(b, "%1%: failed replacing %2% with %3%", type, v, tv);
     }
 
+    static uint32_t signPostInstance = 0;
+    constexpr uint32_t thisSignPostCodeName = 1000;
+    const uint32_t thisSignPostInstance = signPostInstance++;
+
+    LOG2("BEGIN cloneWithFreshTypeVariables(" << type << ") {");
+    kdebug_signpost_start(thisSignPostCodeName, thisSignPostInstance, 0, 0, 5);
     TypeVariableSubstitutionVisitor sv(&tvs, true);
+    //sv.setSnip(true);
     auto clone = type->to<IR::Type>()->apply(sv);
+    kdebug_signpost_end(thisSignPostCodeName, thisSignPostInstance, 0, 0, 5);
+    LOG2("END cloneWithFreshTypeVariables(" << type << ") }");
     CHECK_NULL(clone);
     // Learn this new type
     TypeInference tc(refMap, typeMap, true);
@@ -267,8 +277,16 @@ const IR::Type* TypeInference::specialize(const IR::IMayBeGenericType* type,
 
     LOG2("Translation map\n" << bindings);
 
+    static uint32_t signPostInstance = 0;
+    constexpr uint32_t thisSignPostCodeName = 1001;
+    const uint32_t thisSignPostInstance = signPostInstance++;
+
+    LOG2("BEGIN specialize(" << type << ") {");
+    kdebug_signpost_start(thisSignPostCodeName, thisSignPostInstance, 0, 0, 5);
     TypeVariableSubstitutionVisitor tsv(bindings);
     const IR::Node* result = type->getNode()->apply(tsv);
+    kdebug_signpost_end(thisSignPostCodeName, thisSignPostInstance, 0, 0, 5);
+    LOG2("END specialize(" << type << ") }");
     if (result == nullptr)
         return nullptr;
 
@@ -2601,8 +2619,16 @@ const IR::Node* TypeInference::postorder(IR::MethodCallExpression* expression) {
             return expression;
 
         LOG2("Method type before specialization " << methodType << " with " << tvs);
+    static uint32_t signPostInstance = 0;
+    constexpr uint32_t thisSignPostCodeName = 1002;
+    const uint32_t thisSignPostInstance = signPostInstance++;
+
+    LOG2("BEGIN substitute type vars in MethodCallExpression (" << methodType << ") {");
+    kdebug_signpost_start(thisSignPostCodeName, thisSignPostInstance, 0, 0, 5);
         TypeVariableSubstitutionVisitor substVisitor(tvs);
         auto specMethodType = methodType->apply(substVisitor);
+    kdebug_signpost_end(thisSignPostCodeName, thisSignPostInstance, 0, 0, 5);
+    LOG2("END substitute type vars in MethodCallExpression (" << methodType << ") }");
         LOG2("Method type after specialization " << specMethodType);
 
         // construct types for the specMethodType, use a new typeChecker

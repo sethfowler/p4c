@@ -237,6 +237,9 @@ const IR::Node *Modifier::apply_visitor(const IR::Node *n, const char *name) {
         if (visited->done(n)) {
             n->apply_visitor_revisit(*this, visited->result(n));
             n = visited->result(n);
+        } else if (visitWouldBeUseless(n)) {
+            visited->start(n, visitDagOnce);
+            visited->finish(n, n);
         } else {
             visited->start(n, visitDagOnce);
             IR::Node *copy = n->clone();
@@ -250,17 +253,28 @@ const IR::Node *Modifier::apply_visitor(const IR::Node *n, const char *name) {
                 visitCurrentOnce = visited->refVisitOnce(n);
                 copy->apply_visitor_postorder(*this); }
             if (visited->finish(n, copy))
-                (n = copy)->validate(); } }
+                (n = copy)->validate();
+        }
+    }
     if (ctxt)
         ctxt->child_index++;
     else
         visited = nullptr;
+    //if (n) {
+    //    n->notifyNodeClassIsReachable(n->getNodeClassId());
+    //    if (ctxt && ctxt->parent) {
+    //        ctxt->parent->node->notifyNodeClassesAreReachable(n->reachableNodeClasses);
+    //        ctxt->parent->original->notifyNodeClassesAreReachable(n->reachableNodeClasses);
+    //    }
+    //}
     return n;
 }
 
 const IR::Node *Inspector::apply_visitor(const IR::Node *n, const char *name) {
+    if (n)
+        std::cerr << "Inspector (" << (name ? name : "?") << ") visiting node " << n->id  << " (" << n->node_type_name() << ")" << std::endl;
     if (ctxt) ctxt->child_name = name;
-    if (n && !join_flows(n)) {
+    if (n && !visitWouldBeUseless(n) && !join_flows(n)) {
         PushContext local(ctxt, n);
         auto vp = visited->emplace(n, info_t{false, visitDagOnce});
         if (!vp.second && !vp.first->second.done)
@@ -273,10 +287,31 @@ const IR::Node *Inspector::apply_visitor(const IR::Node *n, const char *name) {
             if (n->apply_visitor_preorder(*this)) {
                 n->visit_children(*this);
                 visitCurrentOnce = &vp.first->second.visitOnce;
-                n->apply_visitor_postorder(*this); }
+                n->apply_visitor_postorder(*this);
+            }
             if (vp.first != visited->find(n))
                 BUG("visitor state tracker corrupted");
-            vp.first->second.done = true; } }
+            vp.first->second.done = true;
+        }
+
+
+        if (n) {
+            std::cerr << "Inspector updating reachability for node " << n->id  << " (" << n->node_type_name() << ")" << std::endl;
+            n->notifyNodeClassIsReachable(n->getNodeClassId());
+            n->markReachableNodeClassesUpToDate();
+            BUG_CHECK(ctxt != nullptr, "How is ctxt null here?");
+            if (ctxt->parent) {
+                std::cerr << "Inspector updating reachability for node parent "
+                          << ctxt->parent->node->id  << " (" << ctxt->parent->node->node_type_name() << ") with orig "
+                          << ctxt->parent->original->id  << " (" << ctxt->parent->original->node_type_name() << ")"
+                          << std::endl;
+                ctxt->parent->node->notifyNodeClassesAreReachable(n->reachableNodeClasses);
+                ctxt->parent->original->notifyNodeClassesAreReachable(n->reachableNodeClasses);
+            } else {
+                std::cerr << "(no parent context, so not updating reachability for parent)" << std::endl;
+            }
+        }
+    }
     if (ctxt)
         ctxt->child_index++;
     else
@@ -291,6 +326,9 @@ const IR::Node *Transform::apply_visitor(const IR::Node *n, const char *name) {
         if (visited->done(n)) {
             n->apply_visitor_revisit(*this, visited->result(n));
             n = visited->result(n);
+        } else if (visitWouldBeUseless(n)) {
+            visited->start(n, visitDagOnce);
+            visited->finish(n, n);
         } else {
             visited->start(n, visitDagOnce);
             auto copy = n->clone();
@@ -328,11 +366,20 @@ const IR::Node *Transform::apply_visitor(const IR::Node *n, const char *name) {
             if (visited->finish(n, final_result) && (n = final_result))
                 final_result->validate();
             if (extra_clone)
-                visited->finish(preorder_result, final_result); } }
+                visited->finish(preorder_result, final_result);
+        }
+    }
     if (ctxt)
         ctxt->child_index++;
     else
         visited = nullptr;
+    //if (n) {
+    //    n->notifyNodeClassIsReachable(n->getNodeClassId());
+    //    if (ctxt && ctxt->parent) {
+    //        ctxt->parent->node->notifyNodeClassesAreReachable(n->reachableNodeClasses);
+    //        ctxt->parent->original->notifyNodeClassesAreReachable(n->reachableNodeClasses);
+    //    }
+    //}
     return n;
 }
 

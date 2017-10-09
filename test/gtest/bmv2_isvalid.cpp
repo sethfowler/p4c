@@ -64,6 +64,9 @@ TEST(BMV2_SynthesizeValidField, ValidField) {
     forAllMatching<IR::Type_Struct>(program, [](const IR::Type_Struct* h) {
         EXPECT_TRUE(h->getField(V1ModelProperties::validField) == nullptr);
     });
+    forAllMatching<IR::BAnd>(program, [](const IR::BAnd*) {
+        ASSERT_TRUE(false) << "Found a BAnd!";
+    });
 }
 
 // Verify that SynthesizeValidField converts 'isValid()' calls on headers to

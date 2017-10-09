@@ -206,6 +206,9 @@ class IrClass : public IrElement {
     std::vector<const Type *> parents;
     const IrClass *concreteParent;
 
+    static unsigned nextId;
+    static unsigned getNextId();
+
     // each argument together with the class that has to receive it
     typedef std::vector<std::pair<const IrField*, const IrClass*>> ctor_args_t;
     void computeConstructorArguments(ctor_args_t &out) const;
@@ -214,6 +217,8 @@ class IrClass : public IrElement {
     bool shouldSkip(cstring feature) const;
 
  public:
+    static unsigned numberOfAssignedIds();
+
     const IrClass *getParent() const {
         if (concreteParent == nullptr && this != nodeClass && kind != NodeKind::Nested)
             return IrClass::nodeClass;
@@ -224,6 +229,7 @@ class IrClass : public IrElement {
     IrNamespace *containedIn, local;
     const NodeKind kind;
     const cstring name;
+    unsigned id;
     mutable bool needVector = false;    // using a Vector of this class
     mutable bool needIndexedVector = false;  // using an IndexedVecor of this class
     mutable bool needNameMap = false;   // using a NameMap of this class
@@ -236,21 +242,23 @@ class IrClass : public IrElement {
             const std::initializer_list<const Type *> &parents,
             const std::initializer_list<IrElement *> &elements)
     : IrElement(info), parents(parents), concreteParent(nullptr), elements(elements),
-      containedIn(ns), local(containedIn, name), kind(kind), name(name) {
+      containedIn(ns), local(containedIn, name), kind(kind), name(name), id(getNextId()) {
         IrNamespace::add_class(this); }
     IrClass(Util::SourceInfo info, IrNamespace *ns, NodeKind kind, cstring name,
             const std::vector<const Type *> *parents = nullptr,
             const std::vector<IrElement *> *elements = nullptr)
     : IrElement(info), concreteParent(nullptr), containedIn(ns),
-      local(containedIn, name), kind(kind), name(name) {
+      local(containedIn, name), kind(kind), name(name), id(getNextId()) {
         if (parents) this->parents = *parents;
         if (elements) this->elements = *elements;
         IrNamespace::add_class(this); }
     IrClass(NodeKind kind, cstring name) : IrClass(Util::SourceInfo(), nullptr, kind, name) {}
     IrClass(NodeKind kind, cstring name, const std::initializer_list<IrElement *> &elements)
     : concreteParent(nullptr), elements(elements), containedIn(&IrNamespace::global),
-      local(containedIn, name), kind(kind), name(name) {
+      local(containedIn, name), kind(kind), name(name), id(getNextId()) {
         IrNamespace::add_class(this); }
+    IrClass(const IrClass&) = delete;
+    IrClass& operator=(const IrClass&) = delete;
 
     static IrClass *nodeClass, *vectorClass, *namemapClass, *nodemapClass,
                    *ideclaration, *indexedVectorClass;

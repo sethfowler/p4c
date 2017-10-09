@@ -86,6 +86,7 @@ class IndexedVector : public Vector<T> {
         declarations.erase(it); }
 
  public:
+    uint64_t getNodeClassId() const final { return 0; }
     using Vector<T>::begin;
     using Vector<T>::end;
 

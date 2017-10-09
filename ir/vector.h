@@ -55,6 +55,7 @@ class Vector : public VectorBase {
     safe_vector<const T *>   vec;
 
  public:
+    uint64_t getNodeClassId() const override { return 0; }
     typedef const T* value_type;
     Vector() = default;
     Vector(const Vector &) = default;

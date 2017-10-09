@@ -17,6 +17,8 @@ limitations under the License.
 #ifndef _IR_NODE_H_
 #define _IR_NODE_H_
 
+#include <bitset>
+#include <cstdint>
 #include <memory>
 #include "lib/cstring.h"
 #include "lib/stringify.h"
@@ -50,6 +52,7 @@ class INode : public Util::IHasSourceInfo, public IHasDbPrint {
     virtual cstring toString() const = 0;  // for user consumption
     virtual void toJSON(JSONGenerator &) const = 0;
     virtual cstring node_type_name() const = 0;
+    virtual uint64_t getNodeClassId() const = 0;
     virtual void validate() const {}
     virtual const Annotation *getAnnotation(cstring) const { return nullptr; }
     template<typename T> bool is() const;
@@ -71,6 +74,15 @@ class Node : public virtual INode {
 
  protected:
     static int currentId;
+
+    mutable bool reachableNodeClassesIsDirty = true;
+    mutable std::bitset<IRNODE_NUM_NODE_CLASS_IDS> reachableNodeClasses;
+
+    void markReachableNodeClassesDirty() const;
+    void markReachableNodeClassesUpToDate() const;
+    void notifyNodeClassIsReachable(uint64_t nodeClassId) const;
+    void notifyNodeClassesAreReachable(const std::bitset<IRNODE_NUM_NODE_CLASS_IDS>& nodeClassIds) const;
+
     void traceVisit(const char* visitor) const;
     virtual void visit_children(Visitor &) { }
     virtual void visit_children(Visitor &) const { }
@@ -90,6 +102,7 @@ class Node : public virtual INode {
     explicit Node(Util::SourceInfo si) : srcInfo(si), id(currentId++) { traceCreation(); }
     Node(const Node& other) : srcInfo(other.srcInfo), id(currentId++) { traceCreation(); }
     virtual ~Node() {}
+    bool canReachClass(uint64_t classId) const;
     const Node *apply(Visitor &v) const;
     const Node *apply(Visitor &&v) const { return apply(v); }
     virtual Node *clone() const = 0;

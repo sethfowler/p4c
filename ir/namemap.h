@@ -35,6 +35,7 @@ class NameMap : public Node {
     cstring obj_name(const void *) { return cstring(0); }
 
  public:
+    uint64_t getNodeClassId() const final { return 0; }
     NameMap() = default;
     NameMap(const NameMap &) = default;
     NameMap(NameMap &&) = default;

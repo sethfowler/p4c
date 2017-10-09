@@ -91,7 +91,22 @@ void IrDefinitions::generate(std::ostream &t, std::ostream &out, std::ostream &i
         << std::endl
         << "namespace IR {\n"
         << "extern std::map<cstring, NodeFactoryFn> unpacker_table;\n"
+        << "cstring nodeClassIdToName(uint64_t nodeClassId);"
         << "}\n";
+
+    impl << "cstring IR::nodeClassIdToName(uint64_t nodeClassId) {\n"
+         << "  switch (nodeClassId) {\n"
+         << "    case 0: return \"(special node or collection)\";\n";
+
+    for (auto* cls : *getClasses()) {
+        if (cls->kind == NodeKind::Concrete || cls->kind == NodeKind::Template)
+            impl << "    case " << cls->id << ": return \"" << cls->name << "\";\n";
+    }
+
+    impl << "  }\n"
+         << "  BUG(\"nodeClassIdToName() called with unknown class id %1%\", nodeClassId);\n"
+         << "  return cstring();\n"
+         << "}\n\n";
 
     impl << "std::map<cstring, NodeFactoryFn> IR::unpacker_table = {\n";
 
@@ -116,6 +131,7 @@ void IrDefinitions::generate(std::ostream &t, std::ostream &out, std::ostream &i
 
     ///////////////////////////////// tree
 
+    t << "#define IRNODE_NUM_NODE_CLASS_IDS " << IrClass::numberOfAssignedIds() << std::endl;
     t << "#define IRNODE_ALL_SUBCLASSES_AND_DIRECT_AND_INDIRECT_BASES(M, T, D, B, ...) \\"
       << std::endl;
     for (auto cls : *getClasses())
@@ -246,6 +262,16 @@ void IrApply::generate_impl(std::ostream &out) const {
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+/* static */ unsigned IrClass::nextId = 0;
+
+/* static */ unsigned IrClass::getNextId() {
+    return nextId++;
+}
+
+/* static */ unsigned IrClass::numberOfAssignedIds() {
+    return nextId;
+}
+
 void IrClass::declare(std::ostream &out) const {
     out << "class " << name << ";" << std::endl;
 }
@@ -296,6 +322,22 @@ void IrClass::generate_hdr(std::ostream &out) const {
     out << " {" << std::endl;
 
     auto access = IrElement::Private;
+    out << indent << "// kind = ";
+    switch (kind) {
+      case NodeKind::Interface: out << "Interface" << std::endl; break;
+      case NodeKind::Abstract: out << "Abstract" << std::endl; break;
+      case NodeKind::Concrete: out << "Concrete" << std::endl; break;
+      case NodeKind::Template: out << "Template" << std::endl; break;
+      case NodeKind::Nested: out << "Nested" << std::endl; break;
+    }
+    if (kind == NodeKind::Concrete || kind == NodeKind::Template) {
+        access = IrElement::Public;
+        out << access << indent << "static constexpr uint64_t nodeClassId = "
+                      << id << ";" << std::endl;
+        out << access << indent << "uint64_t getNodeClassId() const override { return "
+            << name << "::nodeClassId; }" <<std::endl;
+    }
+
     for (auto e : elements) {
         if (e->access != access) out << (access = e->access);
         e->generate_hdr(out); }

@@ -17,7 +17,9 @@ limitations under the License.
 #ifndef _IR_VISITOR_H_
 #define _IR_VISITOR_H_
 
+#include <bitset>
 #include <stdexcept>
+#include <type_traits>
 #include <unordered_map>
 #include "lib/cstring.h"
 #include "ir/ir.h"
@@ -51,8 +53,11 @@ class Visitor {
         ~profile_t();
         profile_t(profile_t &&);
     };
+
+    Visitor() { visitedNodeClasses.set(); }
     virtual ~Visitor() = default;
 
+    std::bitset<IRNODE_NUM_NODE_CLASS_IDS> visitedNodeClasses;
     const char* internalName = nullptr;
 
     // init_apply is called (once) when apply is called on an IR tree
@@ -230,6 +235,24 @@ class Visitor {
     void visitOnce() const { *visitCurrentOnce = true; }
     void visitAgain() const { *visitCurrentOnce = false; }
 
+    bool visitWouldBeUseless(const IR::Node* node) const {
+        if (visitedNodeClasses.all()) return false;
+        for (auto i = 0; i < IRNODE_NUM_NODE_CLASS_IDS; ++i) {
+            if (visitedNodeClasses.test(i)) {
+                if (node->canReachClass(i)) {
+                    std::cerr << "*** Can reach " << IR::nodeClassIdToName(i)
+                              << " via " << node->id << " ("
+                              << node->node_type_name() << ")" << std::endl;
+                    return false;
+                }
+                std::cerr << "*** No way to reach " << IR::nodeClassIdToName(i)
+                          << " via node " << node->id << " ("
+                          << node->node_type_name() << "): " << node << std::endl;
+            }
+        }
+        return true;
+    }
+
  private:
     virtual void visitor_const_error();
     const Context *ctxt = nullptr;  // should be readonly to subclasses
@@ -349,14 +372,113 @@ class P4WriteContext : public virtual Visitor {
 };
 
 
+namespace detail {
+
+/**
+ * An SFINAE helper for checking for the presence of member function overloads.
+ * `HasOverloadOfType<R, T, A>::ForMethod(&T::foo)` is well-formed iff T has an
+ * overload `R foo(A)`.
+ *
+ * Per the (somewhat confusing) rules governing the combination of method
+ * overloading and virtual methods in C++, T is regarded as having an overload
+ * `R foo(A)` if either:
+ *   - `R T::foo(A)` is defined - in other words, T actually has such an
+ *   overload itself.
+ *   - No overload of the form `_ T::foo(_)` is defined, but the nearest base
+ *   class B of T that *does* define *any* overload of that form has an overload
+ *   for `R B::foo(A)`.
+ * This behavior results from the fact that any overload of a method in a
+ * derived class hides all overloads in its base class.
+ *
+ * Given the above, if you want to know whether T has an overload `R foo(A)`
+ * which is not defined in a base class B, you need to check both that
+ * `HasOverloadOfType<R, T, A>::ForMethod(&T::foo)` is well-formed (which checks
+ * that T has such an overload at all), and that
+ * `HasOverloadOfType<R, B, A>::ForMethod(&T::foo)` is *not* well-formed (which
+ * checks that the overload is not actually located in B).
+ */
+template <typename ReturnType, typename Class, typename ArgType>
+struct HasOverloadOfType {
+    typedef ReturnType (Class::*ClassMethodType)(ArgType);
+    static std::true_type ForMethod(ClassMethodType) { return std::true_type(); }
+};
+
+
+/// @return true if the argument has a member function overload
+/// `ReturnType Class::METHOD(ArgType)`. This is subtle; see HasOverloadOfType.
+#define DEFINE_HAS_OVERLOAD(NAME, METHOD) \
+template <typename ReturnType, typename ArgType, typename Class> \
+constexpr bool NAME(...) { return false; } \
+ \
+template <typename ReturnType, typename ArgType, typename Class, typename MethodClass> \
+constexpr auto NAME(const MethodClass*) \
+  -> decltype(((void)HasOverloadOfType<ReturnType, Class, ArgType> \
+                       ::ForMethod(&MethodClass::METHOD)), \
+              bool()) \
+{ return true; } \
+
+DEFINE_HAS_OVERLOAD(hasPreorderOverload, preorder);
+DEFINE_HAS_OVERLOAD(hasPostorderOverload, postorder);
+#undef DEFINE_HAS_OVERLOAD
+
+}  // namespace detail
+
+/// @return true if the member function overload
+/// `ReturnType Derived::preorder(ArgType)` exists, and is different from
+/// `ReturnType Base::preorder(ArgType)`.
+template <typename ReturnType, typename ArgType, typename Base, typename Derived>
+constexpr bool definesPreorderOverload() {
+    return detail::hasPreorderOverload<ReturnType, ArgType, Derived>(
+                                      static_cast<const Derived*>(nullptr)) &&
+           !detail::hasPreorderOverload<ReturnType, ArgType, Base>(
+                                       static_cast<const Derived*>(nullptr));
+}
+
+/// @return true if the member function overload
+/// `ReturnType Derived::postorder(ArgType)` exists, and is different from
+/// `ReturnType Base::postorder(ArgType)`.
+template <typename ReturnType, typename ArgType, typename Base, typename Derived>
+constexpr bool definesPostorderOverload() {
+    return detail::hasPostorderOverload<ReturnType, ArgType, Derived>(
+                                       static_cast<const Derived*>(nullptr)) &&
+           !detail::hasPostorderOverload<ReturnType, ArgType, Base>(
+                                        static_cast<const Derived*>(nullptr));
+}
+
+template <typename InspectorType>
+struct FastInspector : public Inspector {
+    FastInspector() {
+
+      visitedNodeClasses.reset();
+
+#define CHECK_FOR_VISIT_FUNCTIONS(CLASS, _)                                     \
+      if (definesPreorderOverload<bool, const IR::CLASS*, Inspector, InspectorType>()) { \
+          std::cerr << name() << " visits " #CLASS " in preorder" << std::endl; \
+          visitedNodeClasses.set(1); \
+      } \
+      if (definesPostorderOverload<void, const IR::CLASS*, Inspector, InspectorType>()) { \
+          std::cerr << name() << " visits " #CLASS " in postorder" << std::endl; \
+          visitedNodeClasses.set(1); \
+      } \
+
+IRNODE_ALL_SUBCLASSES(CHECK_FOR_VISIT_FUNCTIONS)
+#undef CHECK_FOR_VISIT_FUNCTIONS
+
+    }
+};
+
+
 /**
  * Invoke an inspector @function for every node of type @NodeType in the subtree
  * rooted at @root. The behavior is the same as a postorder Inspector.
  */
 template <typename NodeType, typename Func>
 void forAllMatching(const IR::Node* root, Func&& function) {
-    struct NodeVisitor : public Inspector {
-        explicit NodeVisitor(Func&& function) : function(function) { }
+    struct NodeVisitor : public FastInspector<NodeVisitor> {
+        explicit NodeVisitor(Func&& function) : function(function) {
+            //visitedNodeClasses.reset();
+            //visitedNodeClasses.set(NodeType::nodeClassId);
+        }
         Func function;
         void postorder(const NodeType* node) override { function(node); }
     };

@@ -394,7 +394,7 @@ class TypeCheck::InferActionArgsBottomUp final : public FastInspector<TypeCheck:
     explicit InferActionArgsBottomUp(TypeCheck &s) : self(s) { setName("InferActionArgsBottomUp"); }
 };
 
-class TypeCheck::InferActionArgsTopDown final : public FastInspector<TypeCheck::InferActionArgsTopDown> {
+class TypeCheck::InferActionArgsTopDown final : public Inspector {
     TypeCheck           &self;
     const IR::V1Program *global = nullptr;
     profile_t init_apply(const IR::Node *root) override {

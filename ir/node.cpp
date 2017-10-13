@@ -80,7 +80,7 @@ bool IR::Node::canReachClass(uint64_t classId) const {
 bool IR::Node::canReachClasses(const std::bitset<IRNODE_NUM_NODE_CLASS_IDS>& classes) const {
     // If we don't have up-to-date reachability information, we don't know.
     if (reachableNodeClassesIsDirty) return true;
-    return (reachableNodeClasses | classes).any();
+    return (reachableNodeClasses & classes).any();
 }
 
 /* static */ const std::bitset<IRNODE_NUM_NODE_CLASS_IDS>& getNodeMatchedIds() {

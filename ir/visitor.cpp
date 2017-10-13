@@ -232,14 +232,11 @@ class ForwardChildren : public Visitor {
 
 const IR::Node *Modifier::apply_visitor(const IR::Node *n, const char *name) {
     if (ctxt) ctxt->child_name = name;
-    if (n) {
+    if (n && !visitWouldBeUseless(n)) {
         PushContext local(ctxt, n);
         if (visited->done(n)) {
             n->apply_visitor_revisit(*this, visited->result(n));
             n = visited->result(n);
-        } else if (visitWouldBeUseless(n)) {
-            visited->start(n, visitDagOnce);
-            visited->finish(n, n);
         } else {
             visited->start(n, visitDagOnce);
             IR::Node *copy = n->clone();
@@ -332,15 +329,14 @@ const IR::Node *Inspector::apply_visitor(const IR::Node *n, const char *name) {
 }
 
 const IR::Node *Transform::apply_visitor(const IR::Node *n, const char *name) {
+    const IR::Node* originalNode = n;
+
     if (ctxt) ctxt->child_name = name;
-    if (n) {
+    if (n && !visitWouldBeUseless(n)) {
         PushContext local(ctxt, n);
         if (visited->done(n)) {
             n->apply_visitor_revisit(*this, visited->result(n));
             n = visited->result(n);
-        } else if (visitWouldBeUseless(n)) {
-            visited->start(n, visitDagOnce);
-            visited->finish(n, n);
         } else {
             visited->start(n, visitDagOnce);
             auto copy = n->clone();
@@ -385,6 +381,13 @@ const IR::Node *Transform::apply_visitor(const IR::Node *n, const char *name) {
         ctxt->child_index++;
     else
         visited = nullptr;
+
+    // If we changed the node, add the new node's type to the list of node types
+    // we visit. This is required for ForwardChildren to work... I think?
+    if (n && n != originalNode)
+        visitedNodeClasses.set(n->getNodeClassId());
+
+
     //if (n) {
     //    n->notifyNodeClassIsReachable(n->getNodeClassId());
     //    if (ctxt && ctxt->parent) {

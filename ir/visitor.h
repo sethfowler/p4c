@@ -253,7 +253,19 @@ class Visitor {
         }
         return true;
 #endif
-        return node->canReachClasses(visitedNodeClasses);
+#if 1
+        return !node->canReachClasses(visitedNodeClasses);
+#endif
+#if 0
+        if (node->canReachClasses(visitedNodeClasses)) {
+            std::cout << "*** Can reach a visited node via " << node->id << " ("
+                      << node->node_type_name() << ")\n";
+            return false;
+        }
+        std::cerr << "*** No way to reach a visited node via node " << node->id << " ("
+                  << node->node_type_name() << "): " << node << '\n';
+        return true;
+#endif
     }
 
  private:
@@ -462,11 +474,11 @@ struct FastInspector : public Inspector {
 
 #define CHECK_FOR_VISIT_FUNCTIONS(CLASS, _)                                     \
       if (definesPreorderOverload<bool, const IR::CLASS*, Inspector, InspectorType>()) { \
-          /*std::cerr << name << " visits " #CLASS " in preorder" << std::endl;*/ \
+          /*std::cerr << name << " visits " #CLASS " in preorder" << std::endl; */ \
           matchedIds |= IR::CLASS::getNodeMatchedIds(); \
       } \
       if (definesPostorderOverload<void, const IR::CLASS*, Inspector, InspectorType>()) { \
-          /*std::cerr << name << " visits " #CLASS " in postorder" << std::endl;*/ \
+          /* std::cerr << name << " visits " #CLASS " in postorder" << std::endl; */ \
           matchedIds |= IR::CLASS::getNodeMatchedIds(); \
       } \
 
@@ -479,6 +491,67 @@ IRNODE_ALL_SUBCLASSES(CHECK_FOR_VISIT_FUNCTIONS)
     }
 };
 
+template <typename ModifierType>
+struct FastModifier : public Modifier {
+    FastModifier() {
+      visitedNodeClasses = getVisitorMatchedIds(name());
+    }
+
+ private:
+    static const ReachableNodeSet& getVisitorMatchedIds(const char* name) {
+        static bool initialized = false;
+        static ReachableNodeSet matchedIds;
+        if (!initialized) {
+
+#define CHECK_FOR_VISIT_FUNCTIONS(CLASS, _)                                     \
+      if (definesPreorderOverload<bool, IR::CLASS*, Modifier, ModifierType>()) { \
+          /*std::cerr << name << " visits " #CLASS " in preorder" << std::endl; */ \
+          matchedIds |= IR::CLASS::getNodeMatchedIds(); \
+      } \
+      if (definesPostorderOverload<void, IR::CLASS*, Modifier, ModifierType>()) { \
+          /* std::cerr << name << " visits " #CLASS " in postorder" << std::endl; */ \
+          matchedIds |= IR::CLASS::getNodeMatchedIds(); \
+      } \
+
+IRNODE_ALL_SUBCLASSES(CHECK_FOR_VISIT_FUNCTIONS)
+#undef CHECK_FOR_VISIT_FUNCTIONS
+
+      }
+
+      return matchedIds;
+    }
+};
+
+template <typename TransformType>
+struct FastTransform : public Transform {
+    FastTransform() {
+      visitedNodeClasses = getVisitorMatchedIds(name());
+    }
+
+ private:
+    static const ReachableNodeSet& getVisitorMatchedIds(const char* name) {
+        static bool initialized = false;
+        static ReachableNodeSet matchedIds;
+        if (!initialized) {
+
+#define CHECK_FOR_VISIT_FUNCTIONS(CLASS, _)                                     \
+      if (definesPreorderOverload<const IR::Node*, IR::CLASS*, Transform, TransformType>()) { \
+          /*std::cerr << name << " visits " #CLASS " in preorder" << std::endl; */ \
+          matchedIds |= IR::CLASS::getNodeMatchedIds(); \
+      } \
+      if (definesPostorderOverload<const IR::Node*, IR::CLASS*, Transform, TransformType>()) { \
+          /* std::cerr << name << " visits " #CLASS " in postorder" << std::endl; */ \
+          matchedIds |= IR::CLASS::getNodeMatchedIds(); \
+      } \
+
+IRNODE_ALL_SUBCLASSES(CHECK_FOR_VISIT_FUNCTIONS)
+#undef CHECK_FOR_VISIT_FUNCTIONS
+
+      }
+
+      return matchedIds;
+    }
+};
 
 /**
  * Invoke an inspector @function for every node of type @NodeType in the subtree

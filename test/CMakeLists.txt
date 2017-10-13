@@ -41,6 +41,7 @@ set (GTEST_UNITTEST_SOURCES
   gtest/enumerator_test.cpp
   gtest/exception_test.cpp
   gtest/expr_uses_test.cpp
+  gtest/fast_visitor.cpp
   gtest/format_test.cpp
   gtest/helpers.cpp
   gtest/json_test.cpp

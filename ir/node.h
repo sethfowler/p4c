@@ -75,6 +75,7 @@ class Node : public virtual INode {
  protected:
     static int currentId;
 
+ public:
     mutable bool reachableNodeClassesIsDirty = true;
     mutable std::bitset<IRNODE_NUM_NODE_CLASS_IDS> reachableNodeClasses;
 
@@ -83,6 +84,7 @@ class Node : public virtual INode {
     void notifyNodeClassIsReachable(uint64_t nodeClassId) const;
     void notifyNodeClassesAreReachable(const std::bitset<IRNODE_NUM_NODE_CLASS_IDS>& nodeClassIds) const;
 
+ protected:
     void traceVisit(const char* visitor) const;
     virtual void visit_children(Visitor &) { }
     virtual void visit_children(Visitor &) const { }

@@ -212,6 +212,7 @@ struct PushContext {
         current.parent = stack;
         current.node = current.original = node;
         current.child_index = 0;
+        current.update_reachability = false;
         current.depth = stack ? stack->depth+1 : 1;
         assert(current.depth < 10000);    // stack overflow?
         stack = &current; }
@@ -279,15 +280,13 @@ const IR::Node *Inspector::apply_visitor(const IR::Node *n, const char *name) {
         if (!vp.second && !vp.first->second.done)
             BUG("IR loop detected");
 
-        bool didVisitChildren = false;
-
         if (!vp.second && vp.first->second.visitOnce) {
             n->apply_visitor_revisit(*this);
         } else {
             vp.first->second.done = false;
             visitCurrentOnce = &vp.first->second.visitOnce;
             if (n->apply_visitor_preorder(*this)) {
-                didVisitChildren = true;
+                ctxt->update_reachability = true;
                 n->visit_children(*this);
                 visitCurrentOnce = &vp.first->second.visitOnce;
                 n->apply_visitor_postorder(*this);
@@ -298,7 +297,9 @@ const IR::Node *Inspector::apply_visitor(const IR::Node *n, const char *name) {
         }
 
 
-        if (n && didVisitChildren) {
+        if (n && markReachableDirty) {
+            n->markReachableNodeClassesDirty();
+        } else if (n && ctxt->update_reachability) {
 #if 0
             std::cerr << "Inspector updating reachability for node " << n->id  << " (" << n->node_type_name() << ")" << std::endl;
 #endif
@@ -318,6 +319,14 @@ const IR::Node *Inspector::apply_visitor(const IR::Node *n, const char *name) {
 #if 0
                 std::cerr << "(no parent context, so not updating reachability for parent)" << std::endl;
 #endif
+            }
+        } else if (n && !ctxt->update_reachability && n->reachableNodeClassesIsDirty) {
+            // Need to tell everyone up to the root that they need to stay
+            // dirty.
+            auto* parent = ctxt->parent;
+            while (parent != nullptr) {
+                parent->update_reachability = false;
+                parent = parent->parent;
             }
         }
     }

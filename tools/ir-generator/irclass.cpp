@@ -393,8 +393,12 @@ void IrClass::generate_hdr(std::ostream &out) const {
 }
 
 void IrClass::generate_impl(std::ostream &out) const {
+    if (id)
+        out << "/* static */ constexpr uint64_t IR::" << containedIn << name
+            << "::nodeClassId;" << std::endl;
+
     {
-        out << "/* static */ const ReachableNodeSet& " << "IR::" << containedIn
+        out << "/* static */ const ReachableNodeSet& IR::" << containedIn
             << name << "::getNodeMatchedIds() {\n";
 
         std::string reversedInitializer;

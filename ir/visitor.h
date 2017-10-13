@@ -36,6 +36,7 @@ class Visitor {
         const IR::Node  *node, *original;
         mutable int     child_index;
         mutable const char *child_name;
+        mutable bool    update_reachability;
         int             depth;
     };
     class profile_t {
@@ -58,6 +59,7 @@ class Visitor {
     virtual ~Visitor() = default;
 
     ReachableNodeSet visitedNodeClasses;
+    bool markReachableDirty = false;
     const char* internalName = nullptr;
 
     // init_apply is called (once) when apply is called on an IR tree

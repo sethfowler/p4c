@@ -271,20 +271,26 @@ const IR::Node *Modifier::apply_visitor(const IR::Node *n, const char *name) {
 }
 
 const IR::Node *Inspector::apply_visitor(const IR::Node *n, const char *name) {
+#if 0
     if (n)
         std::cerr << "Inspector (" << (name ? name : "?") << ") visiting node " << n->id  << " (" << n->node_type_name() << ")" << std::endl;
+#endif
     if (ctxt) ctxt->child_name = name;
     if (n && !visitWouldBeUseless(n) && !join_flows(n)) {
         PushContext local(ctxt, n);
         auto vp = visited->emplace(n, info_t{false, visitDagOnce});
         if (!vp.second && !vp.first->second.done)
             BUG("IR loop detected");
+
+        bool didVisitChildren = false;
+
         if (!vp.second && vp.first->second.visitOnce) {
             n->apply_visitor_revisit(*this);
         } else {
             vp.first->second.done = false;
             visitCurrentOnce = &vp.first->second.visitOnce;
             if (n->apply_visitor_preorder(*this)) {
+                didVisitChildren = true;
                 n->visit_children(*this);
                 visitCurrentOnce = &vp.first->second.visitOnce;
                 n->apply_visitor_postorder(*this);
@@ -295,20 +301,26 @@ const IR::Node *Inspector::apply_visitor(const IR::Node *n, const char *name) {
         }
 
 
-        if (n) {
+        if (n && didVisitChildren) {
+#if 0
             std::cerr << "Inspector updating reachability for node " << n->id  << " (" << n->node_type_name() << ")" << std::endl;
+#endif
             n->notifyNodeClassIsReachable(n->getNodeClassId());
             n->markReachableNodeClassesUpToDate();
             BUG_CHECK(ctxt != nullptr, "How is ctxt null here?");
             if (ctxt->parent) {
+#if 0
                 std::cerr << "Inspector updating reachability for node parent "
                           << ctxt->parent->node->id  << " (" << ctxt->parent->node->node_type_name() << ") with orig "
                           << ctxt->parent->original->id  << " (" << ctxt->parent->original->node_type_name() << ")"
                           << std::endl;
+#endif
                 ctxt->parent->node->notifyNodeClassesAreReachable(n->reachableNodeClasses);
                 ctxt->parent->original->notifyNodeClassesAreReachable(n->reachableNodeClasses);
             } else {
+#if 0
                 std::cerr << "(no parent context, so not updating reachability for parent)" << std::endl;
+#endif
             }
         }
     }

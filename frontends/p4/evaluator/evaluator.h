@@ -28,7 +28,7 @@ class IHasBlock {
     virtual IR::ToplevelBlock* getToplevelBlock() = 0;
 };
 
-class Evaluator final : public Inspector, public IHasBlock {
+class Evaluator final : public FastInspector<Evaluator>, public IHasBlock {
     const ReferenceMap*      refMap;
     const TypeMap*           typeMap;
     std::vector<IR::Block*>  blockStack;

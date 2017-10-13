@@ -87,6 +87,7 @@ class IndexedVector : public Vector<T> {
 
  public:
     uint64_t getNodeClassId() const final { return 0; }
+    static const std::bitset<IRNODE_NUM_NODE_CLASS_IDS>& getNodeMatchedIds() { return T::getNodeMatchedIds(); }
     using Vector<T>::begin;
     using Vector<T>::end;
 

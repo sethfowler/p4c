@@ -38,34 +38,54 @@ IR::Node::Node(JSONLoader &json) : id(-1) {
 }
 
 void IR::Node::markReachableNodeClassesDirty() const {
+#if 0
     std::cerr << "*** Node " << id << " (" << node_type_name()
               << "): reachability is dirty" << std::endl;
+#endif
     reachableNodeClassesIsDirty = true;
 }
 
 void IR::Node::markReachableNodeClassesUpToDate() const {
+#if 0
     std::cerr << "*** Node " << id << " (" << node_type_name()
               << "): reachability is up to date" << std::endl;
+#endif
     reachableNodeClassesIsDirty = false;
 }
 
 void IR::Node::notifyNodeClassIsReachable(uint64_t nodeClassId) const {
     if (reachableNodeClasses.test(nodeClassId)) return;
     reachableNodeClasses.set(nodeClassId);
+#if 0
     std::cerr << "*** Node " << id << " (" << node_type_name() << ") can reach "
               << IR::nodeClassIdToName(nodeClassId) << std::endl;
+#endif
 }
 
 void IR::Node::notifyNodeClassesAreReachable(const std::bitset<IRNODE_NUM_NODE_CLASS_IDS>& nodeClassIds) const {
+#if 0
     for (auto i = 0; i < IRNODE_NUM_NODE_CLASS_IDS; ++i)
         if (nodeClassIds.test(i))
             notifyNodeClassIsReachable(i);
+#endif
+    reachableNodeClasses |= nodeClassIds;
 }
 
 bool IR::Node::canReachClass(uint64_t classId) const {
     // If we don't have up-to-date reachability information, we don't know.
     if (reachableNodeClassesIsDirty) return true;
     return reachableNodeClasses.test(classId);
+}
+
+bool IR::Node::canReachClasses(const std::bitset<IRNODE_NUM_NODE_CLASS_IDS>& classes) const {
+    // If we don't have up-to-date reachability information, we don't know.
+    if (reachableNodeClassesIsDirty) return true;
+    return (reachableNodeClasses | classes).any();
+}
+
+/* static */ const std::bitset<IRNODE_NUM_NODE_CLASS_IDS>& getNodeMatchedIds() {
+    static const ReachableNodeSet nodeMatchedIds = ReachableNodeSet().set();
+    return nodeMatchedIds;
 }
 
 // Abbreviated debug print

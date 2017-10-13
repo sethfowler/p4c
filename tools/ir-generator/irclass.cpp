@@ -15,6 +15,8 @@ limitations under the License.
 */
 
 #include "irclass.h"
+#include <set>
+#include <string>
 #include "lib/exceptions.h"
 #include "lib/enumerator.h"
 
@@ -75,6 +77,44 @@ Util::Enumerator<IrClass*>* IrDefinitions::getClasses() const {
             ->where([] (IrClass* e) { return e != nullptr; });
 }
 
+void IrDefinitions::assignIds() {
+    uint64_t nextId = 1;
+
+    for (auto* cls : *getClasses()) {
+        std::cerr << "Generating id for class " << cls->name << std::endl;
+
+        // We only want to assign an id to a class if it represents a type that
+        // can actually be instantiated.
+        if (cls->kind != NodeKind::Concrete && cls->kind != NodeKind::Template) {
+            std::cerr << " - Not a leaf class; skipping" << std::endl;
+            continue;
+        }
+
+        // Assign an id to the class itself.
+        cls->id = nextId++;
+        std::cerr << " - Assigned id " << *cls->id << std::endl;
+
+        // Mark this class and all its parents as matching this class.
+        std::set<const IrClass*> visitedAncestors;
+        std::vector<const IrClass*> ancestorsToVisit { cls };
+        while (!ancestorsToVisit.empty()) {
+            auto* ancestor = ancestorsToVisit.back();
+            ancestorsToVisit.pop_back();
+            std::cerr << " - Adding match id to ancestor " << ancestor->name << std::endl;
+            if (visitedAncestors.count(ancestor) != 0) {
+                std::cerr << " - Already visited this ancestor; skipping" << std::endl;
+                continue;
+            }
+            visitedAncestors.insert(ancestor);
+            ancestor->matchedIds.setbit(*cls->id);
+            for (auto* parent : ancestor->parentClasses)
+                ancestorsToVisit.push_back(parent);
+        }
+    }
+
+    IrClass::numberOfAssignedIds = nextId;
+}
+
 void IrDefinitions::generate(std::ostream &t, std::ostream &out, std::ostream &impl) const {
     std::string macroname = "_IR_GENERATED_H_";
     out << "#ifndef " << macroname << "\n"
@@ -85,6 +125,7 @@ void IrDefinitions::generate(std::ostream &t, std::ostream &out, std::ostream &i
          << "#include \"ir/json_loader.h\"\n" << std::endl;
 
     out << "#include <map>\n"
+        << "#include <bitset>\n" << std::endl
         << "#include <functional>\n" << std::endl
         << "class JSONLoader;\n"
         << "using NodeFactoryFn = IR::Node*(*)(JSONLoader&);\n"
@@ -92,15 +133,18 @@ void IrDefinitions::generate(std::ostream &t, std::ostream &out, std::ostream &i
         << "namespace IR {\n"
         << "extern std::map<cstring, NodeFactoryFn> unpacker_table;\n"
         << "cstring nodeClassIdToName(uint64_t nodeClassId);"
-        << "}\n";
+        << "}\n"
+        << std::endl
+        << "using ReachableNodeSet = std::bitset<" << IrClass::numberOfAssignedIds << ">;\n"
+        << std::endl;
 
     impl << "cstring IR::nodeClassIdToName(uint64_t nodeClassId) {\n"
          << "  switch (nodeClassId) {\n"
          << "    case 0: return \"(special node or collection)\";\n";
 
     for (auto* cls : *getClasses()) {
-        if (cls->kind == NodeKind::Concrete || cls->kind == NodeKind::Template)
-            impl << "    case " << cls->id << ": return \"" << cls->name << "\";\n";
+        if (cls->id)
+            impl << "    case " << *cls->id << ": return \"" << cls->name << "\";\n";
     }
 
     impl << "  }\n"
@@ -131,7 +175,7 @@ void IrDefinitions::generate(std::ostream &t, std::ostream &out, std::ostream &i
 
     ///////////////////////////////// tree
 
-    t << "#define IRNODE_NUM_NODE_CLASS_IDS " << IrClass::numberOfAssignedIds() << std::endl;
+    t << "#define IRNODE_NUM_NODE_CLASS_IDS " << IrClass::numberOfAssignedIds << std::endl;
     t << "#define IRNODE_ALL_SUBCLASSES_AND_DIRECT_AND_INDIRECT_BASES(M, T, D, B, ...) \\"
       << std::endl;
     for (auto cls : *getClasses())
@@ -262,15 +306,8 @@ void IrApply::generate_impl(std::ostream &out) const {
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-/* static */ unsigned IrClass::nextId = 0;
 
-/* static */ unsigned IrClass::getNextId() {
-    return nextId++;
-}
-
-/* static */ unsigned IrClass::numberOfAssignedIds() {
-    return nextId;
-}
+/* static */  uint64_t IrClass::numberOfAssignedIds = 0;
 
 void IrClass::declare(std::ostream &out) const {
     out << "class " << name << ";" << std::endl;
@@ -330,17 +367,20 @@ void IrClass::generate_hdr(std::ostream &out) const {
       case NodeKind::Template: out << "Template" << std::endl; break;
       case NodeKind::Nested: out << "Nested" << std::endl; break;
     }
-    if (kind == NodeKind::Concrete || kind == NodeKind::Template) {
-        access = IrElement::Public;
-        out << access << indent << "static constexpr uint64_t nodeClassId = "
-                      << id << ";" << std::endl;
-        out << access << indent << "uint64_t getNodeClassId() const override { return "
-            << name << "::nodeClassId; }" <<std::endl;
-    }
 
     for (auto e : elements) {
         if (e->access != access) out << (access = e->access);
         e->generate_hdr(out); }
+
+    access = IrElement::Public;
+    if (id) {
+        out << access << indent << "static constexpr uint64_t nodeClassId = "
+                      << *id << ";" << std::endl;
+        out << access << indent << "uint64_t getNodeClassId() const override { return "
+            << name << "::nodeClassId; }" <<std::endl;
+    }
+
+    out << access << indent << "static const ReachableNodeSet& getNodeMatchedIds();\n" << std::endl;
 
     if (kind != NodeKind::Interface && kind != NodeKind::Nested)
         out << indent << "IRNODE" << (kind == NodeKind::Abstract ?  "_ABSTRACT" : "")
@@ -353,6 +393,22 @@ void IrClass::generate_hdr(std::ostream &out) const {
 }
 
 void IrClass::generate_impl(std::ostream &out) const {
+    {
+        out << "/* static */ const ReachableNodeSet& " << "IR::" << containedIn
+            << name << "::getNodeMatchedIds() {\n";
+
+        std::string reversedInitializer;
+        for (int bit = 0; bit < int(IrClass::numberOfAssignedIds); ++bit) {
+            reversedInitializer.push_back(matchedIds.getbit(bit) ? '1' : '0');
+        }
+
+        std::string initializer(reversedInitializer.rbegin(),
+                                reversedInitializer.rend());
+        out << "    static const ReachableNodeSet nodeMatchedIds{\"" << initializer << "\"};\n"
+            << "    return nodeMatchedIds;\n"
+            << "}" << std::endl;
+    }
+
     for (auto e : elements)
         e->generate_impl(out);
 }

@@ -43,7 +43,7 @@ namespace P4 {
    - returns and exits do not appear in parsers
    - extern constructors have the same name as the enclosing extern
  */
-class ValidateParsedProgram final : public Inspector {
+class ValidateParsedProgram final : public FastInspector<ValidateParsedProgram> {
     void container(const IR::IContainer* type);
     // Make sure that type, apply and constructor parameters are distinct
     void distinctParameters(

@@ -56,6 +56,7 @@ class Vector : public VectorBase {
 
  public:
     uint64_t getNodeClassId() const override { return 0; }
+    static const std::bitset<IRNODE_NUM_NODE_CLASS_IDS>& getNodeMatchedIds() { return T::getNodeMatchedIds(); }
     typedef const T* value_type;
     Vector() = default;
     Vector(const Vector &) = default;

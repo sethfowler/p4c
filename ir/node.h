@@ -103,6 +103,8 @@ class Node : public virtual INode {
     Node(const Node& other) : srcInfo(other.srcInfo), id(currentId++) { traceCreation(); }
     virtual ~Node() {}
     bool canReachClass(uint64_t classId) const;
+    bool canReachClasses(const std::bitset<IRNODE_NUM_NODE_CLASS_IDS>& classes) const;
+    static const std::bitset<IRNODE_NUM_NODE_CLASS_IDS>& getNodeMatchedIds();
     const Node *apply(Visitor &v) const;
     const Node *apply(Visitor &&v) const { return apply(v); }
     virtual Node *clone() const = 0;

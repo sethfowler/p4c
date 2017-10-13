@@ -17,7 +17,7 @@ limitations under the License.
 #include "ir.h"
 
 namespace {
-class IRDumper : public Inspector {
+class IRDumper : public FastInspector<IRDumper> {
     std::ostream                &out;
     std::set<const IR::Node *>  dumped;
     unsigned                    maxdepth;

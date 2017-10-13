@@ -94,7 +94,7 @@ class ResolutionContext : public IHasDbPrint {
  *
  * @todo: is @p rootNamespace redundant, since @p context always has it?
  */
-class ResolveReferences : public Inspector {
+class ResolveReferences : public FastInspector<ResolveReferences> {
     /// Reference map -- essentially from paths to declarations.
     ReferenceMap* refMap;
 

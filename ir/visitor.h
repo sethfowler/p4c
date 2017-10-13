@@ -57,7 +57,7 @@ class Visitor {
     Visitor() { visitedNodeClasses.set(); }
     virtual ~Visitor() = default;
 
-    std::bitset<IRNODE_NUM_NODE_CLASS_IDS> visitedNodeClasses;
+    ReachableNodeSet visitedNodeClasses;
     const char* internalName = nullptr;
 
     // init_apply is called (once) when apply is called on an IR tree
@@ -236,6 +236,7 @@ class Visitor {
     void visitAgain() const { *visitCurrentOnce = false; }
 
     bool visitWouldBeUseless(const IR::Node* node) const {
+#if 0
         if (visitedNodeClasses.all()) return false;
         for (auto i = 0; i < IRNODE_NUM_NODE_CLASS_IDS; ++i) {
             if (visitedNodeClasses.test(i)) {
@@ -251,6 +252,8 @@ class Visitor {
             }
         }
         return true;
+#endif
+        return node->canReachClasses(visitedNodeClasses);
     }
 
  private:
@@ -448,22 +451,31 @@ constexpr bool definesPostorderOverload() {
 template <typename InspectorType>
 struct FastInspector : public Inspector {
     FastInspector() {
+      visitedNodeClasses = getVisitorMatchedIds(name());
+    }
 
-      visitedNodeClasses.reset();
+ private:
+    static const ReachableNodeSet& getVisitorMatchedIds(const char* name) {
+        static bool initialized = false;
+        static ReachableNodeSet matchedIds;
+        if (!initialized) {
 
 #define CHECK_FOR_VISIT_FUNCTIONS(CLASS, _)                                     \
       if (definesPreorderOverload<bool, const IR::CLASS*, Inspector, InspectorType>()) { \
-          std::cerr << name() << " visits " #CLASS " in preorder" << std::endl; \
-          visitedNodeClasses.set(1); \
+          /*std::cerr << name << " visits " #CLASS " in preorder" << std::endl;*/ \
+          matchedIds |= IR::CLASS::getNodeMatchedIds(); \
       } \
       if (definesPostorderOverload<void, const IR::CLASS*, Inspector, InspectorType>()) { \
-          std::cerr << name() << " visits " #CLASS " in postorder" << std::endl; \
-          visitedNodeClasses.set(1); \
+          /*std::cerr << name << " visits " #CLASS " in postorder" << std::endl;*/ \
+          matchedIds |= IR::CLASS::getNodeMatchedIds(); \
       } \
 
 IRNODE_ALL_SUBCLASSES(CHECK_FOR_VISIT_FUNCTIONS)
 #undef CHECK_FOR_VISIT_FUNCTIONS
 
+      }
+
+      return matchedIds;
     }
 };
 

@@ -363,7 +363,7 @@ class TypeCheck::InferExpressionsTopDown : public Modifier {
         return true; }
 };
 
-class TypeCheck::InferActionArgsBottomUp : public Inspector {
+class TypeCheck::InferActionArgsBottomUp final : public FastInspector<TypeCheck::InferActionArgsBottomUp> {
     TypeCheck           &self;
     const IR::V1Program *global = nullptr;
     profile_t init_apply(const IR::Node *root) override {
@@ -394,7 +394,7 @@ class TypeCheck::InferActionArgsBottomUp : public Inspector {
     explicit InferActionArgsBottomUp(TypeCheck &s) : self(s) { setName("InferActionArgsBottomUp"); }
 };
 
-class TypeCheck::InferActionArgsTopDown : public Inspector {
+class TypeCheck::InferActionArgsTopDown final : public FastInspector<TypeCheck::InferActionArgsTopDown> {
     TypeCheck           &self;
     const IR::V1Program *global = nullptr;
     profile_t init_apply(const IR::Node *root) override {

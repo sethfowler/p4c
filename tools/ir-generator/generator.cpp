@@ -76,6 +76,7 @@ int main(int argc, char* argv[]) {
         return 1;
 
     defs->resolve();
+    defs->assignIds();
     defs->generate(*t, *header, *impl);
     t->flush();
     return 0;

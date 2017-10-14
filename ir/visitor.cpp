@@ -287,6 +287,10 @@ const IR::Node *Inspector::apply_visitor(const IR::Node *n, const char *name) {
             visitCurrentOnce = &vp.first->second.visitOnce;
             if (n->apply_visitor_preorder(*this)) {
                 ctxt->update_reachability = true;
+#if 0
+                std::cerr << "Inspector will visit children of node " << n->id
+                          << "; can update reachability" << std::endl;
+#endif
                 n->visit_children(*this);
                 visitCurrentOnce = &vp.first->second.visitOnce;
                 n->apply_visitor_postorder(*this);
@@ -321,17 +325,33 @@ const IR::Node *Inspector::apply_visitor(const IR::Node *n, const char *name) {
 #endif
             }
         } else if (n && !ctxt->update_reachability && n->reachableNodeClassesIsDirty) {
+#if 0
+            std::cerr << "Inspector: node " << n->id << " is dirty, and we aren't allowed to update reachability. Propagate that to the root" << std::endl;
+#endif
             // Need to tell everyone up to the root that they need to stay
             // dirty.
             auto* parent = ctxt->parent;
             while (parent != nullptr) {
+#if 0
+                std::cerr << " - Should not update reachability: ancestor "
+                          << parent->node->id << " (original "
+                          << parent->original->id << ")" << std::endl;
+#endif
                 parent->update_reachability = false;
+                parent->node->markReachableNodeClassesDirty();
+                parent->original->markReachableNodeClassesDirty();
                 parent = parent->parent;
             }
         }
     } else if (n && !n->reachableNodeClassesIsDirty && ctxt) {
         // Even though `n`'s reachability data is up-to-date, its parent's may
-        // not be. Propagate that info to the parent.
+        // not be. Propagate that info to the parent. (Note that since we never
+        // pushed a context for this node, `ctxt` *is* the parent.)
+#if 0
+        std::cerr << "Inspector didn't need to update reachability for " << n->id
+                  << "; updating parent " << ctxt->node->id << " (original "
+                  << ctxt->original->id << ")" << std::endl;
+#endif
         ctxt->node->notifyNodeClassesAreReachable(n->reachableNodeClasses);
         ctxt->original->notifyNodeClassesAreReachable(n->reachableNodeClasses);
     }

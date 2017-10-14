@@ -23,12 +23,14 @@ limitations under the License.
 
 class hasSideEffects final : public FastInspector<hasSideEffects> {
     bool result = false;
+
+ public:
     bool preorder(const IR::AssignmentStatement *) override { return !(result = true); }
     /* FIXME -- currently assuming all calls and primitves have side effects */
     bool preorder(const IR::MethodCallExpression *) override { return !(result = true); }
     bool preorder(const IR::Primitive *) override { return !(result = true); }
     bool preorder(const IR::Expression *) override { return !result; }
- public:
+
     explicit hasSideEffects(const IR::Expression *e) { e->apply(*this); }
     explicit operator bool () { return result; }
 };

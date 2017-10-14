@@ -28,6 +28,8 @@ class exprUses final : public FastInspector<exprUses> {
     cstring look_for;
     const char *search_tail = nullptr;  // pointer into look_for for partial match
     bool result = false;
+
+ public:
     bool preorder(const IR::Path *p) override {
         if (look_for.startsWith(p->name)) {
             search_tail = look_for.c_str() + p->name.name.size();
@@ -64,8 +66,8 @@ class exprUses final : public FastInspector<exprUses> {
     void postorder(const IR::PathExpression *) override {}
     void postorder(const IR::Expression *) override { search_tail = nullptr; }
 
- public:
     exprUses(const IR::Expression *e, cstring n) : look_for(n) { e->apply(*this); }
+    exprUses(const IR::Expression *, cstring n, bool) : look_for(n) { }
     explicit operator bool () const { return result; }
 };
 

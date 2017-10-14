@@ -51,7 +51,7 @@ cstring ToP4::ifSystemFile(const IR::Node* node) {
 }
 
 namespace {
-class DumpIR final : public FastInspector<DumpIR> {
+class DumpIR final : public Inspector {
     unsigned depth;
     std::stringstream str;
 

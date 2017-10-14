@@ -133,6 +133,8 @@ class CFGBuilder final : public FastInspector<CFGBuilder> {
 
     const CFG::EdgeSet* get(const IR::Statement* statement)
     { return ::get(after, statement); }
+
+ public:
     bool preorder(const IR::Statement* statement) override {
         ::error("%1%: not supported in control block on this architecture", statement);
         return false;
@@ -240,9 +242,9 @@ class CFGBuilder final : public FastInspector<CFGBuilder> {
         return false;
     }
 
- public:
     CFGBuilder(CFG* cfg, P4::ReferenceMap* refMap, P4::TypeMap* typeMap) :
             cfg(cfg), current(nullptr), refMap(refMap), typeMap(typeMap) {}
+
     const CFG::EdgeSet* run(const IR::Statement* startNode, const CFG::EdgeSet* predecessors) {
         CHECK_NULL(startNode); CHECK_NULL(predecessors);
         current = predecessors;

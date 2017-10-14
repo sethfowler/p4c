@@ -238,27 +238,9 @@ class Visitor {
     void visitAgain() const { *visitCurrentOnce = false; }
 
     bool visitWouldBeUseless(const IR::Node* node) const {
-#if 0
-        if (visitedNodeClasses.all()) return false;
-        for (auto i = 0; i < IRNODE_NUM_NODE_CLASS_IDS; ++i) {
-            if (visitedNodeClasses.test(i)) {
-                if (node->canReachClass(i)) {
-                    std::cerr << "*** Can reach " << IR::nodeClassIdToName(i)
-                              << " via " << node->id << " ("
-                              << node->node_type_name() << ")" << std::endl;
-                    return false;
-                }
-                std::cerr << "*** No way to reach " << IR::nodeClassIdToName(i)
-                          << " via node " << node->id << " ("
-                          << node->node_type_name() << "): " << node << std::endl;
-            }
-        }
-        return true;
-#endif
 #if 1
         return !node->canReachClasses(visitedNodeClasses);
-#endif
-#if 0
+#else
         if (node->canReachClasses(visitedNodeClasses)) {
             std::cout << "*** Can reach a visited node via " << node->id << " ("
                       << node->node_type_name() << ")\n";
@@ -469,26 +451,38 @@ struct FastInspector : public Inspector {
     }
 
  private:
-    static const ReachableNodeSet& getVisitorMatchedIds(const char* name) {
+    const ReachableNodeSet& getVisitorMatchedIds(const char* name) {
+        (void)name;
+#if 0
+        std::cerr << name << "::getVisitorMatchedIds(): checking for matches:" << std::endl;
+#endif
         static bool initialized = false;
         static ReachableNodeSet matchedIds;
         if (!initialized) {
+            initialized = true;
 
 #define CHECK_FOR_VISIT_FUNCTIONS(CLASS, _)                                     \
       if (definesPreorderOverload<bool, const IR::CLASS*, Inspector, InspectorType>()) { \
-          /*std::cerr << name << " visits " #CLASS " in preorder" << std::endl; */ \
+          /*std::cerr << " - " << name << " visits " #CLASS " in preorder" << std::endl;*/ \
           matchedIds |= IR::CLASS::getNodeMatchedIds(); \
       } \
       if (definesPostorderOverload<void, const IR::CLASS*, Inspector, InspectorType>()) { \
-          /* std::cerr << name << " visits " #CLASS " in postorder" << std::endl; */ \
+          /*std::cerr << " - " << name << " visits " #CLASS " in postorder" << std::endl;*/ \
           matchedIds |= IR::CLASS::getNodeMatchedIds(); \
       } \
 
 IRNODE_ALL_SUBCLASSES(CHECK_FOR_VISIT_FUNCTIONS)
 #undef CHECK_FOR_VISIT_FUNCTIONS
 
+          BUG_CHECK(matchedIds.any(), "FastInspector %1% doesn't visit "
+                    "anything. Are your preorder() and postorder() methods "
+                    "private?", name);
+
       }
 
+#if 0
+        std::cerr << name << "::getVisitorMatchedIds(): done" << std::endl;
+#endif
       return matchedIds;
     }
 };
@@ -501,6 +495,7 @@ struct FastModifier : public Modifier {
 
  private:
     static const ReachableNodeSet& getVisitorMatchedIds(const char* name) {
+        (void)name;
         static bool initialized = false;
         static ReachableNodeSet matchedIds;
         if (!initialized) {
@@ -532,13 +527,14 @@ struct FastTransform : public Transform {
 
  private:
     static const ReachableNodeSet& getVisitorMatchedIds(const char* name) {
+        (void)name;
         static bool initialized = false;
         static ReachableNodeSet matchedIds;
         if (!initialized) {
 
 #define CHECK_FOR_VISIT_FUNCTIONS(CLASS, _)                                     \
       if (definesPreorderOverload<const IR::Node*, IR::CLASS*, Transform, TransformType>()) { \
-          /*std::cerr << name << " visits " #CLASS " in preorder" << std::endl; */ \
+          /* std::cerr << name << " visits " #CLASS " in preorder" << std::endl; */ \
           matchedIds |= IR::CLASS::getNodeMatchedIds(); \
       } \
       if (definesPostorderOverload<const IR::Node*, IR::CLASS*, Transform, TransformType>()) { \

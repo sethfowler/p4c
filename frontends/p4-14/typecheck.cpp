@@ -366,6 +366,8 @@ class TypeCheck::InferExpressionsTopDown : public Modifier {
 class TypeCheck::InferActionArgsBottomUp final : public FastInspector<TypeCheck::InferActionArgsBottomUp> {
     TypeCheck           &self;
     const IR::V1Program *global = nullptr;
+
+ public:
     profile_t init_apply(const IR::Node *root) override {
         global = root->to<IR::V1Program>();
         self.actionArgUseTypes.clear();
@@ -390,13 +392,14 @@ class TypeCheck::InferActionArgsBottomUp final : public FastInspector<TypeCheck:
         } else if (self.iterCounter == 1) {
             prim->typecheck(); } }
 
- public:
     explicit InferActionArgsBottomUp(TypeCheck &s) : self(s) { setName("InferActionArgsBottomUp"); }
 };
 
-class TypeCheck::InferActionArgsTopDown final : public Inspector {
+class TypeCheck::InferActionArgsTopDown final : public FastInspector<TypeCheck::InferActionArgsTopDown> {
     TypeCheck           &self;
     const IR::V1Program *global = nullptr;
+
+ public:
     profile_t init_apply(const IR::Node *root) override {
         global = root->to<IR::V1Program>();
         return Inspector::init_apply(root); }
@@ -422,7 +425,6 @@ class TypeCheck::InferActionArgsTopDown final : public Inspector {
         return true;
     }
 
- public:
     explicit InferActionArgsTopDown(TypeCheck &s) : self(s) {
         // In the AssignInitialTypes pass, we replaced all nodes which refer to
         // action arguments with the action argument they refer to. This means

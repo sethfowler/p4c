@@ -863,11 +863,14 @@ bool ComputeWriteSet::preorder(const IR::P4Action* action) {
 namespace {
 class GetDeclarations final : public FastInspector<GetDeclarations> {
     IR::IndexedVector<IR::Declaration> *declarations;
+
+ public:
     bool preorder(const IR::Declaration* declaration) override
     { declarations->push_back(declaration); return true; }
- public:
+
     GetDeclarations() : declarations(new IR::IndexedVector<IR::Declaration>())
     { setName("GetDeclarations"); }
+
     static IR::IndexedVector<IR::Declaration>* get(const IR::Node* node) {
         GetDeclarations gd;
         (void)node->apply(gd);

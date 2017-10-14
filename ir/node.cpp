@@ -67,8 +67,9 @@ void IR::Node::notifyNodeClassesAreReachable(const std::bitset<IRNODE_NUM_NODE_C
     for (auto i = 0; i < IRNODE_NUM_NODE_CLASS_IDS; ++i)
         if (nodeClassIds.test(i))
             notifyNodeClassIsReachable(i);
-#endif
+#else
     reachableNodeClasses |= nodeClassIds;
+#endif
 }
 
 bool IR::Node::canReachClass(uint64_t classId) const {

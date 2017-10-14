@@ -141,6 +141,8 @@ class ExpressionEvaluator final : public FastInspector<ExpressionEvaluator> {
         BUG_CHECK(r != nullptr, "no evaluation for %1%", expression);
         return r;
     }
+
+ public:
     void postorder(const IR::Constant* expression) override;
     void postorder(const IR::BoolLiteral* expression) override;
     void postorder(const IR::Operation_Binary* expression) override;
@@ -153,7 +155,6 @@ class ExpressionEvaluator final : public FastInspector<ExpressionEvaluator> {
     void postorder(const IR::ListExpression* expression) override;
     void postorder(const IR::MethodCallExpression* expression) override;
 
- public:
     ExpressionEvaluator(ReferenceMap* refMap, TypeMap* typeMap, ValueMap* valueMap) :
             refMap(refMap), typeMap(typeMap), valueMap(valueMap) {
         CHECK_NULL(refMap); CHECK_NULL(typeMap); CHECK_NULL(valueMap);

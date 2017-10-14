@@ -35,8 +35,10 @@ class ConvertActions final : public FastInspector<ConvertActions> {
     void convertActionParams(const IR::ParameterList *parameters,
                              Util::JsonArray* params);
     void createActions();
-    bool preorder(const IR::PackageBlock* package);
+
  public:
+    bool preorder(const IR::PackageBlock* package);
+
     explicit ConvertActions(Backend *backend) : backend(backend),
     refMap(backend->getRefMap()), typeMap(backend->getTypeMap()),
     json(backend->json), conv(backend->getExpressionConverter())

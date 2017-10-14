@@ -26,7 +26,7 @@ limitations under the License.
 
 namespace BMV2 {
 
-class ConvertDeparser : public Inspector {
+class ConvertDeparser final : public FastInspector<ConvertDeparser> {
     Backend*               backend;
     P4::ReferenceMap*      refMap;
     P4::TypeMap*           typeMap;

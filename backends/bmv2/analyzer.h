@@ -191,7 +191,7 @@ class ProgramParts {
     void analyze(const IR::ToplevelBlock* toplevel);
 };
 
-class DiscoverStructure : public Inspector {
+class DiscoverStructure final : public FastInspector<DiscoverStructure> {
     ProgramParts*           structure;
  public:
     explicit DiscoverStructure(ProgramParts* structure) : structure(structure)

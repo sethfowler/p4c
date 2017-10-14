@@ -23,7 +23,7 @@ limitations under the License.
 
 namespace BMV2 {
 
-class ConvertActions : public Inspector {
+class ConvertActions final : public FastInspector<ConvertActions> {
     Backend*               backend;
     P4::ReferenceMap*      refMap;
     P4::TypeMap*           typeMap;

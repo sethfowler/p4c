@@ -29,7 +29,7 @@ namespace BMV2 {
 
 class Backend;
 
-class ConvertHeaders : public Inspector {
+class ConvertHeaders final : public FastInspector<ConvertHeaders> {
     Backend*             backend;
     cstring              scalarsName;
     cstring              scalarsTypeName;

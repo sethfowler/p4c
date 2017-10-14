@@ -25,7 +25,7 @@ limitations under the License.
 
 namespace BMV2 {
 
-class ErrorCodesVisitor : public Inspector {
+class ErrorCodesVisitor final : public FastInspector<ErrorCodesVisitor> {
     ErrorCodesMap*    errorCodesMap;
  public:
     // we map error codes to numerical values for bmv2

@@ -28,7 +28,7 @@ namespace BMV2 {
 
 class JsonObjects;
 
-class ParserConverter : public Inspector {
+class ParserConverter final : public FastInspector<ParserConverter> {
     Backend* backend;
     P4::ReferenceMap*    refMap;
     P4::TypeMap*         typeMap;

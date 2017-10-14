@@ -26,7 +26,7 @@ limitations under the License.
 
 namespace BMV2 {
 
-class ExtractArchInfo : public Inspector {
+class ExtractArchInfo final : public FastInspector<ExtractArchInfo> {
  private:
     P4::TypeMap*       typeMap;
     P4::PortableModel& portable_model;

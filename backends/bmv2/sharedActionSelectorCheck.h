@@ -33,7 +33,7 @@ using SelectorInput = std::vector<const IR::Expression *>;
 // This pass makes sure that when several match tables share a selector, they use the same input for
 // the selection algorithm. This is because bmv2 considers that the selection key is part of the
 // action_selector while v1model.p4 considers that it belongs to the table match key definition.
-class SharedActionSelectorCheck : public Inspector {
+class SharedActionSelectorCheck final : public FastInspector<SharedActionSelectorCheck> {
     P4::ReferenceMap* refMap;
     P4::TypeMap*      typeMap;
     std::map<const IR::Declaration_Instance *, SelectorInput> selector_input_map{};

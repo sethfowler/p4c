@@ -114,7 +114,7 @@ bool CFG::checkForCycles() const {
 namespace {
 // This visitor "converts" IR::Node* into EdgeSets
 // Since we cannot return EdgeSets, we place them in the 'after' map.
-class CFGBuilder : public Inspector {
+class CFGBuilder final : public FastInspector<CFGBuilder> {
     CFG*                    cfg;
     const CFG::EdgeSet*     current;  // predecessors of current node
     std::map<const IR::Statement*, const CFG::EdgeSet*> after;  // successors of each statement

@@ -140,7 +140,7 @@ Detect whether a Select expression is too complicated for BMv2.
 Also used to detect complex expressions that are arguments
 to method calls.
 */
-class ComplexExpression : public Inspector {
+class ComplexExpression final : public FastInspector<ComplexExpression> {
  public:
     bool isComplex = false;
     ComplexExpression() { setName("ComplexExpression"); }

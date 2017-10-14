@@ -46,7 +46,7 @@ class ArithmeticFixup : public Transform {
     { CHECK_NULL(typeMap); }
 };
 
-class ExpressionConverter : public Inspector {
+class ExpressionConverter final : public FastInspector<ExpressionConverter> {
     Backend*           backend;
     P4::P4CoreLibrary& corelib;
     cstring            scalarsName;

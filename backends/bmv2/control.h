@@ -32,7 +32,7 @@ limitations under the License.
 
 namespace BMV2 {
 
-class ControlConverter : public Inspector {
+class ControlConverter final : public FastInspector<ControlConverter> {
     Backend*               backend;
     P4::ReferenceMap*      refMap;
     P4::TypeMap*           typeMap;
@@ -62,7 +62,7 @@ class ControlConverter : public Inspector {
     { setName("Control"); }
 };
 
-class ChecksumConverter : public Inspector {
+class ChecksumConverter final : public FastInspector<ChecksumConverter> {
     Backend* backend;
  public:
     bool preorder(const IR::PackageBlock* b) override;

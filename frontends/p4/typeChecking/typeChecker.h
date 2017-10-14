@@ -32,7 +32,7 @@ namespace P4 {
 
 // This pass only clears the typeMap if the program has changed.
 // This is needed if the types of some objects in the program change.
-class ClearTypeMap : public Inspector {
+class ClearTypeMap final : public FastInspector<ClearTypeMap> {
     TypeMap* typeMap;
  public:
     explicit ClearTypeMap(TypeMap* typeMap) :

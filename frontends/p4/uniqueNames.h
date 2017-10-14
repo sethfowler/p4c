@@ -65,7 +65,7 @@ class UniqueNames : public PassManager {
 // Finds and allocates new names for some symbols:
 // Declaration_Variable, Declaration_Constant, Declaration_Instance,
 // P4Table, P4Action.
-class FindSymbols : public Inspector {
+class FindSymbols final : public FastInspector<FindSymbols> {
     ReferenceMap *refMap;  // used to generate new names
     RenameMap    *renameMap;
 
@@ -112,7 +112,7 @@ class RenameSymbols : public Transform {
 };
 
 // Finds parameters for actions that will be given unique names
-class FindParameters : public Inspector {
+class FindParameters final : public FastInspector<FindParameters> {
     ReferenceMap* refMap;  // used to generate new names
     RenameMap*    renameMap;
 

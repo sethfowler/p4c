@@ -22,7 +22,7 @@ namespace P4 {
 
 namespace {
 
-class FindActionCalls : public Inspector {
+class FindActionCalls final : public FastInspector<FindActionCalls> {
     ReferenceMap* refMap;
     TypeMap* typeMap;
     RenameMap* renameMap;

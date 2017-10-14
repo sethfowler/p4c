@@ -29,7 +29,7 @@ namespace P4 {
  * Emit a compilation error if the IR contains complex expressions without
  * `@name` annotations.
  */
-class KeyNameGenerator : public Inspector {
+class KeyNameGenerator final : public FastInspector<KeyNameGenerator> {
     std::map<const IR::Expression*, cstring> name;
     const TypeMap* typeMap;  // can be nullptr
 

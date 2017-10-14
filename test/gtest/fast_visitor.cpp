@@ -278,4 +278,44 @@ TEST(FastInspector, NodeClone) {
     EXPECT_TRUE(clone->canReachClass(IR::BXor::nodeClassId));
 }
 
+TEST(FastInspector, PropagateReachabilityFromUpToDateChildToDirtyParent) {
+    struct VisitBOr : public FastInspector<VisitBOr> {
+        void postorder(const IR::BOr*) override { }
+    };
+    VisitBOr visitBOr;
+
+    auto* a = new IR::Constant(0xff);
+    auto* b = new IR::BAnd(a, a);
+
+    // When first created, the child nodes should be able to reach anything.
+    EXPECT_TRUE(a->canReachClass(IR::BOr::nodeClassId));
+    EXPECT_TRUE(a->canReachClass(IR::IfStatement::nodeClassId));
+    EXPECT_TRUE(b->canReachClass(IR::BOr::nodeClassId));
+    EXPECT_TRUE(b->canReachClass(IR::IfStatement::nodeClassId));
+
+    // Visit the child nodes. This won't match anything, since there's no
+    // IR::BOr in this IR tree, but it'll update reachability.
+    b->apply(visitBOr);
+    EXPECT_TRUE(a->canReachClass(IR::Constant::nodeClassId));
+    EXPECT_FALSE(a->canReachClass(IR::BAnd::nodeClassId));
+    EXPECT_FALSE(a->canReachClass(IR::BOr::nodeClassId));
+    EXPECT_FALSE(a->canReachClass(IR::IfStatement::nodeClassId));
+    EXPECT_TRUE(b->canReachClass(IR::Constant::nodeClassId));
+    EXPECT_TRUE(b->canReachClass(IR::BAnd::nodeClassId));
+    EXPECT_FALSE(b->canReachClass(IR::BOr::nodeClassId));
+    EXPECT_FALSE(b->canReachClass(IR::IfStatement::nodeClassId));
+
+    // Wrap the whole thing in another node, and visit it. This again won't
+    // match anything, but it will update reachability for `parent`, and it
+    // *should* properly record that IR::Constant and IR::Band are reachable via
+    // `parent`.
+    auto* parent = new IR::LNot(b);
+    parent->apply(visitBOr);
+    EXPECT_TRUE(parent->canReachClass(IR::Constant::nodeClassId));
+    EXPECT_TRUE(parent->canReachClass(IR::BAnd::nodeClassId));
+    EXPECT_TRUE(parent->canReachClass(IR::LNot::nodeClassId));
+    EXPECT_FALSE(parent->canReachClass(IR::BOr::nodeClassId));
+    EXPECT_FALSE(parent->canReachClass(IR::IfStatement::nodeClassId));
+}
+
 }  // namespace Test

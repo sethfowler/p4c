@@ -329,6 +329,11 @@ const IR::Node *Inspector::apply_visitor(const IR::Node *n, const char *name) {
                 parent = parent->parent;
             }
         }
+    } else if (n && !n->reachableNodeClassesIsDirty && ctxt) {
+        // Even though `n`'s reachability data is up-to-date, its parent's may
+        // not be. Propagate that info to the parent.
+        ctxt->node->notifyNodeClassesAreReachable(n->reachableNodeClasses);
+        ctxt->original->notifyNodeClassesAreReachable(n->reachableNodeClasses);
     }
     if (ctxt)
         ctxt->child_index++;

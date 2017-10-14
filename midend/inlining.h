@@ -207,7 +207,7 @@ class InlineDriver : public Transform {
 };
 
 /// Must be run after an evaluator; uses the blocks to discover caller/callee relationships.
-class DiscoverInlining : public Inspector {
+class DiscoverInlining final : public FastInspector<DiscoverInlining> {
     InlineWorkList*     inlineList;  // output: result is here
     ReferenceMap*       refMap;      // input
     TypeMap*            typeMap;     // input

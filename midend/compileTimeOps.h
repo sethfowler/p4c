@@ -29,7 +29,7 @@ namespace P4 {
  * @pre This should be run after inlining, constant folding and strength reduction.
  * @post There are no IR::Mod and IR::Div operations in the program.
  */
-class CompileTimeOperations : public Inspector {
+class CompileTimeOperations final : public FastInspector<CompileTimeOperations> {
  public:
     CompileTimeOperations() { setName("CompileTimeOperations"); }
     void err(const IR::Node* expression)

@@ -24,7 +24,7 @@ limitations under the License.
 /// Functor to check if an expression uses an lvalue.  The lvalue is specified as a
 /// a cstring, which can be the name of a variable with optional field names and constant
 /// array indexes for fields of headers or structs or unions or elements of stacks.
-class exprUses : public Inspector {
+class exprUses final : public FastInspector<exprUses> {
     cstring look_for;
     const char *search_tail = nullptr;  // pointer into look_for for partial match
     bool result = false;

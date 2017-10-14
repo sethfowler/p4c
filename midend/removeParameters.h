@@ -71,7 +71,7 @@ class ActionInvocation {
     }
 };
 
-class FindActionParameters : public Inspector {
+class FindActionParameters final : public FastInspector<FindActionParameters> {
     ReferenceMap*     refMap;
     TypeMap*          typeMap;
     ActionInvocation* invocations;

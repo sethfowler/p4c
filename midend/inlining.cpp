@@ -31,7 +31,7 @@ namespace P4 {
 
 namespace {
 
-class FindLocationSets : public Inspector {
+class FindLocationSets final : public FastInspector<FindLocationSets> {
     StorageMap *storageMap;
     std::map<const IR::Expression*, const LocationSet*> loc;
 
@@ -182,7 +182,7 @@ control d() {
 }
 So the externally visible name for the table is "cinst.t"
 */
-class ComputeNewNames : public Inspector {
+class ComputeNewNames final : public FastInspector<ComputeNewNames> {
     cstring           prefix;
     P4::ReferenceMap* refMap;
     SymRenameMap*     renameMap;
@@ -638,7 +638,7 @@ const IR::Node* GeneralInliner::preorder(IR::MethodCallStatement* statement) {
 }
 
 namespace {
-class ComputeNewStateNames : public Inspector {
+class ComputeNewStateNames final : public FastInspector<ComputeNewNames> {
     ReferenceMap* refMap;
     cstring prefix;
     cstring acceptName;

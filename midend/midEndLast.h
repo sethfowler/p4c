@@ -21,7 +21,7 @@ limitations under the License.
 
 namespace P4 {
 
-class MidEndLast : public Inspector {
+class MidEndLast final : public FastInspector<MidEndLast> {
  public:
     MidEndLast() { setName("MidEndLast"); }
     bool preorder(const IR::P4Program*) override

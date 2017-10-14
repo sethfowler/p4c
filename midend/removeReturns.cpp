@@ -28,7 +28,7 @@ It sets a boolean flag for each of them.
 It treats exceptionally Functions - it claims that
 returns do not exist in Functions.
 */
-class HasExits : public Inspector {
+class HasExits final : public FastInspector<HasExits> {
  public:
     bool hasExits;
     bool hasReturns;
@@ -181,7 +181,7 @@ const IR::Node* DoRemoveReturns::preorder(IR::SwitchStatement* statement) {
 ////////////////////////////////////////////////////////////////
 
 namespace {
-class CallsExit : public Inspector {
+class CallsExit : public FastInspector<CallsExit> {
     ReferenceMap*        refMap;
     TypeMap*             typeMap;
     std::set<const IR::Node*>* callers;

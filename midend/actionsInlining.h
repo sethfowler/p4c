@@ -69,7 +69,7 @@ class ActionsInlineList {
     }
 };
 
-class DiscoverActionsInlining : public Inspector {
+class DiscoverActionsInlining final : public FastInspector<DiscoverActionsInlining> {
     ActionsInlineList* toInline;  // output
     P4::ReferenceMap*  refMap;    // input
     P4::TypeMap*       typeMap;   // input

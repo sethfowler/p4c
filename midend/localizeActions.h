@@ -51,7 +51,7 @@ class GlobalActionReplacements {
 };
 
 // Find global (i.e., declared at toplevel) actions and who uses them.
-class FindGlobalActionUses : public Inspector {
+class FindGlobalActionUses final : public FastInspector<FindGlobalActionUses> {
     ReferenceMap*       refMap;
     GlobalActionReplacements* repl;
     std::set<const IR::P4Action*> globalActions;
@@ -114,7 +114,7 @@ class ActionReplacement {
 // Find actions that are invoked in multiple places; create a new
 // copy for each invocation and store it in the repl map.  Ignores
 // actions that are not in a control.
-class FindRepeatedActionUses : public Inspector {
+class FindRepeatedActionUses final : public FastInspector<FindRepeatedActionUses> {
     ReferenceMap* refMap;
     ActionReplacement* repl;
  public:

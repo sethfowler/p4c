@@ -125,7 +125,7 @@ class ValueMap final : public IHasDbPrint {
     }
 };
 
-class ExpressionEvaluator : public Inspector {
+class ExpressionEvaluator final : public FastInspector<ExpressionEvaluator> {
     ReferenceMap*       refMap;
     TypeMap*            typeMap;  // updated if constant folding happens
     ValueMap*           valueMap;

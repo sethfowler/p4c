@@ -94,7 +94,7 @@ class ParserStructure {
     void analyze(ReferenceMap* refMap, TypeMap* typeMap, bool unroll);
 };
 
-class AnalyzeParser : public Inspector {
+class AnalyzeParser final : public FastInspector<AnalyzeParser> {
     const ReferenceMap* refMap;
     ParserStructure*    current;
  public:

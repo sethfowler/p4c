@@ -28,7 +28,7 @@ namespace P4 {
  * @pre none
  * @post raise an error if there are invalid table properties in P4 program.
  */
-class ValidateTableProperties : public Inspector {
+class ValidateTableProperties final : public FastInspector<ValidateTableProperties> {
     std::set<cstring> legalProperties;
  public:
     ValidateTableProperties(const std::initializer_list<cstring> legal) {

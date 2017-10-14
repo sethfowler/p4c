@@ -21,7 +21,7 @@ limitations under the License.
 
 /* Should this be a method on IR::Expression? */
 
-class hasSideEffects : public Inspector {
+class hasSideEffects final : public FastInspector<hasSideEffects> {
     bool result = false;
     bool preorder(const IR::AssignmentStatement *) override { return !(result = true); }
     /* FIXME -- currently assuming all calls and primitves have side effects */

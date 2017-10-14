@@ -5,7 +5,7 @@ namespace P4 {
 
 namespace {
 // Checks to see whether an IR node includes a table.apply() sub-expression
-class HasTableApply : public Inspector {
+class HasTableApply final : public FastInspector<HasTableApply> {
     ReferenceMap* refMap;
     TypeMap*      typeMap;
  public:

@@ -26,7 +26,7 @@ namespace P4 {
  * See if a variable occurs in a Type.
  * If true, return null, else return the original type.
  */
-class TypeOccursVisitor : public FastInspector<TypeOccursVisitor> {
+class TypeOccursVisitor final : public FastInspector<TypeOccursVisitor> {
  public:
     const IR::ITypeVar* toFind;
     bool occurs;

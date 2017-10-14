@@ -93,7 +93,7 @@ class SpecializationMap {
 /** Builds a SpecializationMap of instantiations with constant values for
  * type and constructor arguments.
  */
-class FindSpecializations : public Inspector {
+class FindSpecializations final : public FastInspector<FindSpecializations> {
     SpecializationMap* specMap;
 
  public:

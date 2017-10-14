@@ -58,7 +58,7 @@ class HasUses {
 };
 
 // Run for each parser and control separately
-class FindUninitialized : public Inspector {
+class FindUninitialized final : public FastInspector<FindUninitialized> {
     ProgramPoint    context;
     ReferenceMap*   refMap;
     TypeMap*        typeMap;

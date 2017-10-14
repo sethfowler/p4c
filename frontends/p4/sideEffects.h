@@ -33,7 +33,7 @@ namespace P4 {
  * method call expression is counted.  With type information, invocations
  * of ```isValid()``` are ignored.
  */
-class SideEffects : public Inspector {
+class SideEffects final : public FastInspector<SideEffects> {
  private:
     ReferenceMap* refMap;
     TypeMap*      typeMap;

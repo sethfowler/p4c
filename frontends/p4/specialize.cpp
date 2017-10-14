@@ -137,7 +137,7 @@ SpecializationMap::getSpecializations(const IR::Node* insertionPoint) const {
 }
 
 namespace {
-class IsConcreteType : public Inspector {
+class IsConcreteType final : public FastInspector<IsConcreteType> {
     const TypeMap* typeMap;
  public:
     bool hasTypeVariables = false;

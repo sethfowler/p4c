@@ -401,7 +401,7 @@ class DismantleExpression : public Transform {
     /// Computes the SetOfLocations read and written by an expression.
     /// This is invoked only for expressions that appear as arguments
     /// to method calls.
-    class ReadsWrites : public Inspector {
+    class ReadsWrites final : public FastInspector<ReadsWrites> {
         const ReferenceMap* refMap;
         std::map<const IR::Expression*, const SetOfLocations*> rw;
 

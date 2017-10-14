@@ -520,7 +520,7 @@ PrimitiveConverter::convertArgs(ProgramStructure *structure, const IR::Primitive
 ///////////////////////////////////////////////////////////////
 
 namespace {
-class DiscoverStructure : public Inspector {
+class DiscoverStructure final : public FastInspector<DiscoverStructure> {
     ProgramStructure* structure;
 
     // These names can only be used for very specific purposes
@@ -583,7 +583,7 @@ class DiscoverStructure : public Inspector {
     { structure->externs.emplace(ext); checkReserved(ext, ext->name); }
 };
 
-class ComputeCallGraph : public Inspector {
+class ComputeCallGraph final : public FastInspector<ComputeCallGraph> {
     ProgramStructure* structure;
 
  public:
@@ -988,7 +988,7 @@ class AdjustLengths : public Transform {
 
 /// Detects whether there are two declarations in the P4-14 program
 /// with the same name and for the same kind of object.
-class DetectDuplicates: public Inspector {
+class DetectDuplicates final : public FastInspector<DetectDuplicates> {
  public:
     DetectDuplicates() { setName("DetectDuplicates"); }
 

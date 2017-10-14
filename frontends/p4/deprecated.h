@@ -26,7 +26,7 @@ namespace P4 {
  * Checks for the use of symbols that are marked as @deprecated and
  * gives warnings.
  */
-class CheckDeprecated : public Inspector {
+class CheckDeprecated final : public FastInspector<CheckDeprecated> {
     const ReferenceMap* refMap;
  public:
     explicit CheckDeprecated(const ReferenceMap* refMap): refMap(refMap)

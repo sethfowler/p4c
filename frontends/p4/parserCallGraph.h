@@ -27,7 +27,7 @@ typedef CallGraph<const IR::ParserState*> ParserCallGraph;
 
 /** @brief Builds a CallGraph of ParserState nodes.
   */
-class ComputeParserCG : public Inspector {
+class ComputeParserCG final : public FastInspector<ComputeParserCG> {
     const ReferenceMap* refMap;
     ParserCallGraph* transitions;
 

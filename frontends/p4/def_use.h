@@ -379,7 +379,7 @@ class AllDefinitions : public IHasDbPrint {
  * @pre Must be executed after variable initializers have been removed.
  *
  */
-class ComputeWriteSet : public Inspector {
+class ComputeWriteSet final : public FastInspector<ComputeWriteSet> {
  protected:
     AllDefinitions*     definitions;  /// Result computed by this pass.
     Definitions*        currentDefinitions;  /// Before statement currently processed.

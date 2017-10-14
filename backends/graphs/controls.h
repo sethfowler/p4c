@@ -53,7 +53,7 @@ class EdgeTypeIface {
     virtual cstring label() const = 0;
 };
 
-class ControlGraphs : public Inspector {
+class ControlGraphs final : public FastInspector<ControlGraphs> {
  public:
     enum class VertexType {
         TABLE,
